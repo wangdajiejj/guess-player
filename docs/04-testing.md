@@ -8,6 +8,7 @@ node scripts/test-compare.js     # 第 1 层：32 条断言  判定算法
 node scripts/test-flow.js        # 第 2 层：77 条断言  云函数端到端
 node scripts/test-candidates.js  # 第 2.5 层：36 条断言 线索筛选（客户端推理）
 node scripts/test-sfx.js         # 音效：24 条断言
+node scripts/test-rank.js        # 排行榜计分：66 条断言
 node scripts/check-mp.js         # 静态检查：13~15 条断言（随 Mock 开关变化）
 node scripts/toggle-mock.js on   # 本地测试模式：拼装 67 条断言的回归（可选，仅开发期）
 python database/validate.py database/players.sample.jsonl          # 数据校验
@@ -292,6 +293,27 @@ node scripts/toggle-mock.js status      # 只查当前处于哪个模式
 
 ---
 
+## 4.9 排行榜计分（`scripts/test-rank.js`，66 条）
+
+排行榜的数据层是**平台无关**的：分数怎么算、怎么编成托管 KV、本地最佳记录怎么存，
+都不依赖任何微信 API，所以能直接在 node 里跑。
+
+| 分组 | 关键断言 |
+| --- | --- |
+| 得分口径 | `scoreOf(used) = (max + 1 - used) × 100`；手算 10 局对拍（**不复用被测代码**，否则算法改错时测试跟着一起错）；失败局 0 分 |
+| 等宽编码 | 每条 KV 的 value 长度等于配置宽度；**字符串排序 == 数值排序** |
+| 反例 | 明确断言「不补零时字典序确实会错」（`"900" > "1000"`）—— 把坑钉成用例，防止有人"优化"掉 `pad()` |
+| 指标 | 胜率用千分比存（4 位整数，避开小数点和除零）；任何输入下都不出现 `NaN` / `Infinity` |
+| 托管 KV 约束 | ≤ 128 个 key、单 value ≤ 1KB、值必须是字符串（微信托管数据的硬限制） |
+| 最佳记录 | 只记猜中的局；gameId 去重（结果页多次进入不重复计）；按步数升序 + 得分降序，截断到 10 条 |
+| 与 storage 联动 | `recordGame` 会累加 `scoreSum` 并更新 `bestSteps`；`clearStats` 连最佳记录一起清（不留孤儿数据） |
+
+> 排行榜的**展示层**要等架构切到小游戏才能接开放数据域 ——
+> `wx.setUserCloudStorage` / `getFriendCloudStorage` 是小游戏专有 API，
+> 且开放数据域只有 canvas、没有 DOM。原因与替代方案记在 `docs/01-PRD.md`。
+
+---
+
 ## 5. 已经抓到过的 bug（留作回归依据）
 
 | bug | 症状 | 现在由哪条用例守着 |
@@ -310,7 +332,7 @@ node scripts/toggle-mock.js status      # 只查当前处于哪个模式
 ## 6. 上线前 checklist
 
 ```
-□ 双击 scripts\一键测试.bat     235 条断言全绿 + 难度达标
+□ 双击 scripts\一键测试.bat     9 段全绿 + 难度达标
 
 等价于手工逐条跑：
 
@@ -320,6 +342,7 @@ node scripts/test-flow.js         #  77 通过  云函数端到端
 node scripts/test-search.js       #  51 通过  搜索命中
 node scripts/test-candidates.js   #  36 通过  线索筛选（答案永不被筛掉）
 node scripts/test-sfx.js          #  24 通过  音效参数与调用点
+node scripts/test-rank.js         #  66 通过  排行榜计分
 node scripts/check-mp.js          #  15 通过  静态检查（组件/页面/事件绑定/Mock 残留）
 node scripts/simulate.js          #  难度验收（最坏步数 ≤ 8）
 python database/validate.py database/players.full.jsonl <日期> --fix

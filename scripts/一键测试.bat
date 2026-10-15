@@ -16,56 +16,63 @@ set PY=C:\Users\wang\.workbuddy\binaries\python\envs\default\Scripts\python.exe
 set FAILED=0
 
 echo ============================================================
-echo   [1/8] compare unit test
+echo   [1/9] compare unit test
 echo ============================================================
 "%NODE%" scripts\test-compare.js
 if errorlevel 1 (echo   [FAIL] & set FAILED=1) else (echo   [ OK ])
 
 echo.
 echo ============================================================
-echo   [2/8] cloud function end-to-end test
+echo   [2/9] cloud function end-to-end test
 echo ============================================================
 "%NODE%" scripts\test-flow.js
 if errorlevel 1 (echo   [FAIL] & set FAILED=1) else (echo   [ OK ])
 
 echo.
 echo ============================================================
-echo   [3/8] search hit test
+echo   [3/9] search hit test
 echo ============================================================
 "%NODE%" scripts\test-search.js
 if errorlevel 1 (echo   [FAIL] & set FAILED=1) else (echo   [ OK ])
 
 echo.
 echo ============================================================
-echo   [4/8] clue filter test (tap a chip to narrow candidates)
+echo   [4/9] clue filter test (tap a chip to narrow candidates)
 echo ============================================================
 "%NODE%" scripts\test-candidates.js
 if errorlevel 1 (echo   [FAIL] & set FAILED=1) else (echo   [ OK ])
 
 echo.
 echo ============================================================
-echo   [5/8] sound effect test
+echo   [5/9] sound effect test
 echo ============================================================
 "%NODE%" scripts\test-sfx.js
 if errorlevel 1 (echo   [FAIL] & set FAILED=1) else (echo   [ OK ])
 
 echo.
 echo ============================================================
-echo   [6/8] miniprogram static check
+echo   [6/9] leaderboard scoring test
+echo ============================================================
+"%NODE%" scripts\test-rank.js
+if errorlevel 1 (echo   [FAIL] & set FAILED=1) else (echo   [ OK ])
+
+echo.
+echo ============================================================
+echo   [7/9] miniprogram static check
 echo ============================================================
 "%NODE%" scripts\check-mp.js
 if errorlevel 1 (echo   [FAIL] & set FAILED=1) else (echo   [ OK ])
 
 echo.
 echo ============================================================
-echo   [7/8] playability simulation
+echo   [8/9] playability simulation
 echo ============================================================
 "%NODE%" scripts\simulate.js
 if errorlevel 1 (echo   [FAIL] & set FAILED=1) else (echo   [ OK ])
 
 echo.
 echo ============================================================
-echo   [8/8] players data validation
+echo   [9/9] players data validation
 echo ============================================================
 "%PY%" database\validate.py database\players.full.jsonl 2026-10-11 --fix
 if errorlevel 1 (echo   [FAIL] & set FAILED=1) else (echo   [ OK ])
