@@ -1,0 +1,18 @@
+# 行尾统一：仓库里一律存 LF，签出时按操作系统还原。
+# 不做这件事的话，Windows 贡献者一提交就会把整个文件刷成 CRLF 大 diff。
+* text=auto eol=lf
+
+# .bat 必须留 CRLF —— cmd 对纯 LF 的批处理有时会把多行粘成一行。
+# （编码是另一回事：*.bat 一律纯 ASCII，见各文件头的 NOTE。）
+*.bat text eol=crlf
+
+# 二进制，别让 git 自作主张改
+*.png binary
+*.jpg binary
+*.gif binary
+*.ico binary
+*.mp3 binary
+*.wav binary
+
+# 500 人的题库是仓库里最大的文本文件，diff 时别让 git 尝试切分
+*.jsonl -diff
