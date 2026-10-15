@@ -1,0 +1,31 @@
+# 个人本地配置（微信开发者工具自动生成，每人不同）
+project.private.config.json
+
+# ⚠️ 密钥类文件：绝不能进版本库
+# AppSecret（小程序密钥，32 位十六进制）只能留在微信后台，
+# 本项目用云开发，代码里任何地方都不需要它。
+.env
+.env.*
+*.secret
+secret.*
+
+# ⚠️ assets/ 是 2026-10-10 那版「AI 生成球员肖像」方案的残留，
+#    早已废弃 —— 头像现在由 components/player-badge 用队色现场绘制（零位图）。
+#    里面是可识别真人的 AI 肖像（梅西/C罗/姆巴佩…）与生图提示词，
+#    开源发布有肖像权风险，也和「程序绘制、非照片或肖像」的对外表述冲突。
+#    一律不进版本库，本地也没用到，建议直接删掉。
+assets/
+
+# 根目录遗留的临时垃圾文件
+/OK
+
+# 依赖与产物
+node_modules/
+package-lock.json
+miniprogram_npm/
+
+# 编辑器 / 系统
+.vscode/
+.idea/
+.DS_Store
+*.log

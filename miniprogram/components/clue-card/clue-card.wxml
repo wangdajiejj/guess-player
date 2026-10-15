@@ -1,0 +1,31 @@
+<view class="cc-card {{allGreen ? 'cc-hit' : ''}}">
+  <view class="cc-head">
+    <player-badge player="{{player}}" size="72" circle="{{true}}" />
+
+    <view class="cc-id">
+      <view class="cc-name">{{player.name_cn}}</view>
+      <view class="cc-en gp-sub">{{player.name_en}}</view>
+    </view>
+
+    <view class="cc-round">
+      <text wx:if="{{allGreen}}" class="cc-hit-badge">命中</text>
+      <text wx:else class="cc-round-txt">第 {{row.round}} 猜</text>
+    </view>
+  </view>
+
+  <view class="cc-chips">
+    <block wx:for="{{chips}}" wx:key="key">
+      <view
+        class="cc-chip {{tappable ? 'cc-chip-tap' : ''}}"
+        hover-class="{{tappable ? 'cc-chip-press' : 'none'}}"
+        hover-stay-time="80"
+        data-key="{{item.key}}"
+        bindtap="onChip"
+        style="background: {{item.bg}}; color: {{item.textColor}}"
+      >
+        <text>{{item.text}}</text>
+        <text wx:if="{{item.arrow}}" class="cc-arrow">{{item.arrow}}</text>
+      </view>
+    </block>
+  </view>
+</view>

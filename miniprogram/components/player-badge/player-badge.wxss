@@ -1,0 +1,68 @@
+.pb {
+  position: relative;
+  overflow: hidden;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 45° 细斜纹，透明度压得很低，只在近看时能察觉 */
+.pb-stripe {
+  position: absolute;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  background-image: repeating-linear-gradient(
+    45deg,
+    rgba(255, 255, 255, 0.12) 0rpx,
+    rgba(255, 255, 255, 0.12) 5rpx,
+    rgba(255, 255, 255, 0) 5rpx,
+    rgba(255, 255, 255, 0) 13rpx
+  );
+}
+
+/* 底部压暗，保证白字在任何队色上都可读（白色球衣尤其需要） */
+.pb-shade {
+  position: absolute;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  background-image: linear-gradient(160deg, rgba(0, 0, 0, 0.04) 0%, rgba(0, 0, 0, 0.38) 100%);
+}
+
+.pb-initial {
+  position: relative;
+  color: #fff;
+  font-weight: 600;
+  line-height: 1;
+  text-shadow: 0 2rpx 6rpx rgba(0, 0, 0, 0.4);
+}
+
+.pb-pos {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 34rpx;
+  line-height: 34rpx;
+  text-align: center;
+  font-size: 20rpx;
+  font-weight: 600;
+  letter-spacing: 1rpx;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.42);
+}
+
+.pb-nat {
+  position: absolute;
+  left: 8rpx;
+  top: 8rpx;
+  padding: 2rpx 8rpx;
+  border-radius: 999rpx;
+  font-size: 18rpx;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.35);
+}

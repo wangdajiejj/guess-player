@@ -1,0 +1,229 @@
+.help {
+  padding-bottom: calc(48rpx + env(safe-area-inset-bottom));
+}
+
+/* ---------------- 顶部 ---------------- */
+
+.intro {
+  display: flex;
+  align-items: center;
+  padding: 32rpx;
+}
+
+.intro-icon {
+  width: 88rpx;
+  height: 88rpx;
+  flex: none;
+  margin-right: 24rpx;
+  border-radius: 50%;
+  background: var(--gp-main-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 44rpx;
+}
+
+.intro-text {
+  flex: 1;
+  font-size: 29rpx;
+  line-height: 1.7;
+}
+
+.hl {
+  color: var(--gp-main);
+  font-weight: 500;
+}
+
+/* ---------------- 区块 ---------------- */
+
+.sec { margin-top: 36rpx; }
+
+.sec-title {
+  margin: 0 0 16rpx 8rpx;
+  font-size: 30rpx;
+  font-weight: 600;
+}
+
+.sec-card { padding: 28rpx 32rpx; }
+
+.sec-note {
+  margin-top: 20rpx;
+  padding-top: 20rpx;
+  border-top: 2rpx solid var(--gp-line);
+  font-size: 26rpx;
+  line-height: 1.7;
+  color: var(--gp-text-sub);
+}
+
+/* ---------------- 颜色图例 ---------------- */
+
+.lg-row {
+  display: flex;
+  align-items: flex-start;
+  padding: 14rpx 0;
+}
+
+.lg-row + .lg-row { border-top: 2rpx solid var(--gp-line); }
+
+.lg-chip {
+  width: 56rpx;
+  height: 56rpx;
+  flex: none;
+  margin-right: 20rpx;
+  border-radius: 12rpx;
+  color: #fff;
+  font-size: 26rpx;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.lg-body { flex: 1; min-width: 0; }
+
+.lg-name { font-size: 28rpx; font-weight: 500; }
+
+.lg-desc { font-size: 24rpx; line-height: 1.6; }
+
+/* ---------------- 箭头 ---------------- */
+
+.arrow-row { display: flex; justify-content: space-between; }
+
+.ar-item {
+  flex: 1;
+  text-align: center;
+}
+
+.ar-sym {
+  display: block;
+  font-size: 44rpx;
+  font-weight: 600;
+  color: var(--gp-main);
+  line-height: 1.2;
+}
+
+.ar-txt {
+  display: block;
+  margin-top: 6rpx;
+  font-size: 22rpx;
+  color: var(--gp-text-sub);
+  line-height: 1.5;
+}
+
+/* ---------------- 举例 ---------------- */
+
+.eg-row {
+  display: flex;
+  align-items: center;
+  padding: 16rpx 0;
+  font-size: 25rpx;
+}
+
+.eg-row + .eg-row { border-top: 2rpx dashed var(--gp-line); }
+
+.eg-label {
+  width: 96rpx;
+  flex: none;
+  color: var(--gp-text-sub);
+}
+
+.eg-ca { width: 210rpx; flex: none; }
+
+.eg-arrow { width: 48rpx; flex: none; text-align: center; color: var(--gp-text-mute); }
+
+.eg-res { width: 168rpx; flex: none; }
+
+.eg-chip {
+  display: inline-block;
+  padding: 4rpx 16rpx;
+  border-radius: 8rpx;
+  color: #fff;
+  font-size: 22rpx;
+}
+
+.chip-green { background: var(--gp-green); }
+.chip-amber { background: var(--gp-amber); }
+.chip-gray { background: var(--gp-gray); }
+
+.eg-why { flex: 1; color: var(--gp-text-sub); font-size: 23rpx; }
+
+/* ---------------- 模式 ---------------- */
+
+.mode-item { padding: 12rpx 0; }
+
+.mode-item + .mode-item { border-top: 2rpx solid var(--gp-line); }
+
+.mode-name { font-size: 29rpx; font-weight: 500; }
+
+.mode-desc { font-size: 25rpx; line-height: 1.7; }
+
+/* ---------------- 隐私 ---------------- */
+
+.pv-item {
+  display: flex;
+  padding: 10rpx 0;
+  font-size: 26rpx;
+  line-height: 1.7;
+}
+
+.pv-dot { width: 24rpx; flex: none; color: var(--gp-main); }
+
+.pv-txt { flex: 1; }
+
+/* ---------------- 点标签筛选 ---------------- */
+
+.tip-list {
+  margin-top: 22rpx;
+  padding-top: 20rpx;
+  border-top: 2rpx solid var(--gp-line);
+}
+
+.tip-item {
+  display: flex;
+  align-items: flex-start;
+  padding: 8rpx 0;
+  font-size: 25rpx;
+  line-height: 1.6;
+}
+
+.tip-chip {
+  width: 44rpx;
+  height: 44rpx;
+  flex: none;
+  margin-right: 16rpx;
+  border-radius: 10rpx;
+  color: #fff;
+  font-size: 24rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tip-v {
+  flex: 1;
+  color: var(--gp-text-sub);
+}
+
+/* ---------------- AI 声明 ---------------- */
+
+.ai-text {
+  font-size: 26rpx;
+  line-height: 1.8;
+  color: var(--gp-text-sub);
+}
+
+.ai-badge {
+  display: inline-block;
+  margin-top: 16rpx;
+  padding: 6rpx 20rpx;
+  border-radius: 8rpx;
+  border: 2rpx solid var(--gp-gray);
+  color: var(--gp-gray-dark);
+  font-size: 22rpx;
+}
+
+.foot-note {
+  margin-top: 40rpx;
+  text-align: center;
+  font-size: 22rpx;
+}

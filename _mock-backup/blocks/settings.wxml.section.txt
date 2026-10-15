@@ -1,0 +1,19 @@
+  <!-- >>> MOCK-BEGIN：本地测试模式专用，提审前必须删掉这段 <<< -->
+  <view class="sec" wx:if="{{mockMode}}">
+    <view class="sec-title">本地测试</view>
+    <view class="sec-card gp-card">
+      <view class="cell cell-tap" bindtap="resetMock">
+        <view class="cell-body">
+          <view class="cell-name">换一道每日一题</view>
+          <view class="cell-desc gp-sub">本机已存 {{mockGames}} 局测试对局</view>
+        </view>
+        <text class="cell-arrow">›</text>
+      </view>
+    </view>
+    <view class="sec-note">
+      当前跑在「本地测试模式」：没有连任何云服务，数据全在本机。
+      提审前请双击 scripts/关闭本地测试-提审前必点.bat。
+    </view>
+  </view>
+  <!-- <<< MOCK-END <<< -->
+

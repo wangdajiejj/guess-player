@@ -1,0 +1,116 @@
+<view class="game">
+  <!-- 顶部状态栏 -->
+  <view class="topbar">
+    <view class="tb-left">
+      <view class="tb-title">{{titleText}}</view>
+      <view class="tb-sub gp-sub" wx:if="{{dateKey && mode === 'daily'}}">{{dateKey}}</view>
+    </view>
+    <view class="tb-right">
+      <view class="tb-remain">
+        <text class="tb-num">{{remaining}}</text>
+        <text class="tb-slash">/{{maxGuesses}}</text>
+      </view>
+      <view class="tb-label gp-sub">剩余机会</view>
+    </view>
+  </view>
+
+  <!-- 进度点 -->
+  <view class="dots">
+    <view
+      wx:for="{{maxGuesses}}"
+      wx:key="*this"
+      class="dot {{index < used ? 'dot-used' : 'dot-left'}}"
+    ></view>
+  </view>
+
+  <!-- 线索区 -->
+  <scroll-view
+    class="rows"
+    scroll-y
+    enhanced
+    show-scrollbar="{{false}}"
+    scroll-into-view="{{anchor}}"
+    scroll-with-animation
+  >
+    <block wx:if="{{status === 'loading'}}">
+      <view class="gp-state">
+        <view class="spinner"></view>
+        <text class="gp-sub">正在准备题目…</text>
+      </view>
+    </block>
+
+    <block wx:elif="{{status === 'error'}}">
+      <view class="gp-state">
+        <text class="gp-sub">{{errMsg}}</text>
+        <button class="gp-btn gp-btn-ghost btn-retry" bindtap="retry">重试</button>
+      </view>
+    </block>
+
+    <block wx:else>
+      <view wx:if="{{tipShow}}" class="clue-tip" bindtap="hideTip">
+        <text class="clue-tip-icon">💡</text>
+        <text class="clue-tip-txt">点线索标签，筛出还符合这条条件的球员</text>
+        <text class="clue-tip-x">×</text>
+      </view>
+
+      <view wx:if="{{rows.length === 0}}" class="gp-state">
+        <view class="empty-icon">⚽</view>
+        <text class="empty-title">还没开始</text>
+        <text class="gp-sub">从下方选一名球员，看看你和答案差在哪儿</text>
+      </view>
+
+      <clue-card
+        wx:for="{{rows}}"
+        wx:for-item="row"
+        wx:key="round"
+        id="row-{{row.round}}"
+        row="{{row}}"
+        tappable="{{status === 'playing'}}"
+        bind:clue="onClue"
+      />
+
+      <view wx:if="{{status !== 'playing' && rows.length}}" class="finish-tip">
+        <text wx:if="{{status === 'won'}}">猜中了！正在进入结果页…</text>
+        <text wx:else>机会用完了，正在揭晓答案…</text>
+      </view>
+    </block>
+
+    <view class="safe-gap"></view>
+  </scroll-view>
+
+  <!-- 底部操作 -->
+  <view class="bottom">
+    <button
+      class="gp-btn gp-btn-primary {{status !== 'playing' || submitting ? 'gp-btn-disabled' : ''}}"
+      bindtap="openSheet"
+      disabled="{{status !== 'playing' || submitting}}"
+    >
+      <text wx:if="{{submitting}}">核对中…</text>
+      <text wx:elif="{{rows.length === 0 && status === 'playing'}}">选择球员</text>
+      <text wx:elif="{{status === 'playing'}}">再选一名（剩 {{remaining}} 次）</text>
+      <text wx:elif="{{status === 'won'}}">已猜中</text>
+      <text wx:else>机会用完</text>
+    </button>
+
+    <button class="gp-btn gp-btn-ghost btn-help" bindtap="goHelp">规则说明</button>
+  </view>
+
+  <!-- 搜索候选面板 -->
+  <search-sheet
+    show="{{sheetShow}}"
+    players="{{players}}"
+    guessed="{{guessedIds}}"
+    bind:close="closeSheet"
+    bind:select="onSelect"
+  />
+
+  <!-- 按线索筛选候选池：点线索卡上的标签打开 -->
+  <candidate-sheet
+    panel="{{candPanel}}"
+    players="{{players}}"
+    guessed="{{guessedIds}}"
+    date-key="{{dateKey}}"
+    bind:close="closeCand"
+    bind:select="onCandSelect"
+  />
+</view>

@@ -1,0 +1,4 @@
+      /* >>> MOCK-BEGIN：本地测试模式专用，正式包必须删掉 <<< */
+      , mockMode: api.isMock()
+      , mockGames: this.countMockGames()
+      /* <<< MOCK-END <<< */

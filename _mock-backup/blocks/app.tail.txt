@@ -1,0 +1,9 @@
+
+  /* >>> MOCK-BEGIN：本地测试模式专用，正式包必须删掉 <<< */
+  , /** 让用户一眼看出当前跑在本地测试模式上，而不是「怎么没数据」 */
+  notifyMock() {
+    setTimeout(() => {
+      wx.showToast({ title: '本地测试模式', icon: 'none', duration: 1800 });
+    }, 600);
+  }
+  /* <<< MOCK-END <<< */

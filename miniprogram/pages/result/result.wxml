@@ -1,0 +1,101 @@
+<view class="result gp-page">
+
+  <!-- 加载中 -->
+  <view wx:if="{{loading}}" class="rs-state">
+    <view class="spinner"></view>
+    <text class="gp-sub">正在揭晓答案…</text>
+  </view>
+
+  <!-- 出错 -->
+  <view wx:elif="{{errMsg}}" class="rs-state">
+    <text class="gp-sub">{{errMsg}}</text>
+    <button class="gp-btn gp-btn-ghost btn-retry" bindtap="load">重试</button>
+  </view>
+
+  <block wx:else>
+
+    <!-- 结果横幅 -->
+    <view class="banner {{won ? 'banner-won' : 'banner-lost'}}">
+      <view class="bn-title">{{won ? '猜中了！' : '很遗憾'}}</view>
+      <view class="bn-score">{{scoreText}}</view>
+      <view class="bn-sub">{{modeText}}</view>
+      <view wx:if="{{won}}" class="bn-badge">第 {{used}} 次就找到了</view>
+    </view>
+
+    <!-- 答案卡 -->
+    <view class="ans-card gp-card">
+      <view class="ans-head">
+        <player-badge
+          player="{{answer}}"
+          size="168"
+          circle="{{false}}"
+          showMeta="{{true}}"
+        />
+        <view class="ans-meta">
+          <view class="ans-name">{{answer.name_cn}}</view>
+          <view class="ans-en">{{answer.name_en}}</view>
+          <view class="ans-tags">
+            <text wx:if="{{!answer.active}}" class="tag tag-legend">退役传奇</text>
+            <text class="tag">{{answer.position}}</text>
+            <text class="tag tag-plain">{{answer.league}}</text>
+          </view>
+        </view>
+      </view>
+
+      <view class="ans-grid">
+        <view class="ag-item" wx:for="{{info}}" wx:key="label">
+          <view class="ag-label">{{item.label}}</view>
+          <view class="ag-value">{{item.value}}</view>
+        </view>
+      </view>
+
+      <view class="ai-note">小头像由球队配色现场绘制，非照片或肖像，不含队徽与赞助商标识</view>
+    </view>
+
+    <!-- 答案介绍 -->
+    <view class="txt-card gp-card" wx:if="{{answer.intro}}">
+      <view class="tc-title">他是谁</view>
+      <view class="tc-body">{{answer.intro}}</view>
+    </view>
+
+    <view class="txt-card gp-card" wx:if="{{answer.fun_fact}}">
+      <view class="tc-title">生涯趣事</view>
+      <view class="tc-body">{{answer.fun_fact}}</view>
+    </view>
+
+    <view class="txt-card gp-card" wx:if="{{answer.meme}}">
+      <view class="tc-title">球迷热梗</view>
+      <view class="tc-body">{{answer.meme}}</view>
+    </view>
+
+    <!-- 猜测回放 -->
+    <view class="rows-card gp-card" wx:if="{{rows.length}}">
+      <view class="rc-title">我的 {{rows.length}} 次猜测</view>
+      <clue-card
+        wx:for="{{rows}}"
+        wx:for-item="row"
+        wx:key="round"
+        row="{{row}}"
+      />
+    </view>
+
+    <!-- 操作 -->
+    <view class="acts">
+      <button class="gp-btn gp-btn-primary" bindtap="saveImage" disabled="{{generating}}">
+        {{generating ? '正在生成…' : (shareReady ? '保存战绩图到相册' : '生成战绩图')}}
+      </button>
+      <button class="gp-btn gp-btn-ghost" open-type="share">分享给好友</button>
+      <button class="gp-btn gp-btn-ghost" wx:if="{{mode === 'endless'}}" bindtap="again">再来一局</button>
+      <button class="gp-btn gp-btn-ghost" bindtap="goHome">返回首页</button>
+    </view>
+
+    <view class="foot-note gp-mute">
+      战绩只保存在本机，不上传服务器
+    </view>
+
+  </block>
+
+  <!-- 离屏画布：仅用于生成分享图，不显示给用户 -->
+  <canvas type="2d" id="shareCanvas" class="share-canvas"></canvas>
+
+</view>

@@ -1,0 +1,218 @@
+.result {
+  padding-bottom: calc(48rpx + env(safe-area-inset-bottom));
+}
+
+.rs-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 160rpx 0;
+}
+
+.btn-retry {
+  margin-top: 32rpx;
+  padding: 0 56rpx;
+  height: 76rpx;
+  border-radius: 38rpx;
+  font-size: 28rpx;
+}
+
+.spinner {
+  width: 56rpx;
+  height: 56rpx;
+  margin-bottom: 24rpx;
+  border: 6rpx solid var(--gp-line);
+  border-top-color: var(--gp-main);
+  border-radius: 50%;
+  animation: rs-spin 0.8s linear infinite;
+}
+
+@keyframes rs-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ---------------- 结果横幅 ---------------- */
+
+.banner {
+  padding: 40rpx 32rpx 44rpx;
+  border-radius: 20rpx;
+  text-align: center;
+  color: #fff;
+}
+
+.banner-won { background: linear-gradient(135deg, #148053, #0c5c3b); }
+.banner-lost { background: linear-gradient(135deg, #b0903c, #8a7a26); }
+
+.bn-title {
+  font-size: 34rpx;
+  font-weight: 500;
+  letter-spacing: 2rpx;
+}
+
+.bn-score {
+  margin-top: 8rpx;
+  font-size: 80rpx;
+  font-weight: 600;
+  line-height: 1.1;
+}
+
+.bn-sub {
+  margin-top: 6rpx;
+  font-size: 24rpx;
+  opacity: 0.75;
+}
+
+.bn-badge {
+  display: inline-block;
+  margin-top: 20rpx;
+  padding: 8rpx 24rpx;
+  border-radius: 24rpx;
+  background: rgba(255, 255, 255, 0.18);
+  font-size: 24rpx;
+}
+
+/* ---------------- 答案卡 ---------------- */
+
+.ans-card {
+  margin-top: 24rpx;
+  padding: 32rpx;
+}
+
+.ans-head {
+  display: flex;
+  align-items: center;
+}
+
+/* 答案卡头像由 player-badge 绘制（168rpx，带位置徽章与国籍） */
+
+.ans-meta {
+  flex: 1;
+  margin-left: 24rpx;
+  min-width: 0;
+}
+
+.ans-name {
+  font-size: 40rpx;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.ans-en {
+  margin-top: 4rpx;
+  font-size: 24rpx;
+  color: var(--gp-text-sub);
+  word-break: break-all;
+}
+
+.ans-tags { margin-top: 12rpx; }
+
+.tag {
+  display: inline-block;
+  margin-right: 10rpx;
+  padding: 4rpx 16rpx;
+  border-radius: 20rpx;
+  background: var(--gp-main-bg);
+  color: var(--gp-main);
+  font-size: 22rpx;
+}
+
+.tag-legend {
+  background: #fdf3d8;
+  color: #8a7a26;
+}
+
+.tag-plain {
+  background: var(--gp-gray-bg);
+  color: var(--gp-gray-dark);
+}
+
+.ans-grid {
+  display: flex;
+  flex-wrap: wrap;
+  margin-top: 28rpx;
+  padding-top: 24rpx;
+  border-top: 2rpx solid var(--gp-line);
+}
+
+.ag-item {
+  width: 25%;
+  margin-bottom: 20rpx;
+  text-align: center;
+}
+
+.ag-label {
+  font-size: 22rpx;
+  color: var(--gp-text-mute);
+}
+
+.ag-value {
+  margin-top: 4rpx;
+  font-size: 26rpx;
+  font-weight: 500;
+}
+
+.ai-note {
+  padding-top: 16rpx;
+  border-top: 2rpx dashed var(--gp-line);
+  font-size: 20rpx;
+  color: var(--gp-text-mute);
+  text-align: center;
+}
+
+/* ---------------- 文字卡 ---------------- */
+
+.txt-card {
+  margin-top: 20rpx;
+  padding: 28rpx 32rpx;
+}
+
+.tc-title {
+  font-size: 26rpx;
+  font-weight: 500;
+  color: var(--gp-main);
+  margin-bottom: 10rpx;
+}
+
+.tc-body {
+  font-size: 28rpx;
+  line-height: 1.75;
+  color: var(--gp-text);
+}
+
+/* ---------------- 猜测回放 ---------------- */
+
+.rows-card {
+  margin-top: 20rpx;
+  padding: 24rpx 24rpx 4rpx;
+}
+
+.rc-title {
+  font-size: 26rpx;
+  font-weight: 500;
+  margin-bottom: 12rpx;
+}
+
+/* ---------------- 操作 ---------------- */
+
+.acts {
+  margin-top: 32rpx;
+}
+
+.acts .gp-btn { margin-bottom: 20rpx; }
+
+.foot-note {
+  margin-top: 8rpx;
+  text-align: center;
+  font-size: 22rpx;
+}
+
+/* ---------------- 离屏画布 ---------------- */
+
+.share-canvas {
+  position: fixed;
+  left: -4000rpx;
+  top: 0;
+  width: 1080rpx;
+  height: 864rpx;
+  z-index: -1;
+}

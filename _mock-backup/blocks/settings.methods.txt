@@ -1,0 +1,26 @@
+
+  /* >>> MOCK-BEGIN：本地测试模式专用，正式包必须删掉 <<< */
+  , countMockGames() {
+    try { return require('../../utils/mock-api.js').gameCount(); } catch (e) { return 0; }
+  }
+
+  /**
+   * 本地测试模式下「每日一题」一天只有一道，反复自测很憋屈，
+   * 所以给个手动换题的口子。正式包不会有这个入口。
+   */
+  , resetMock() {
+    wx.showModal({
+      title: '换一道每日一题',
+      content: `将清除本机 ${this.data.mockGames} 局测试对局（含今天已经开过的那局），之后重新抽题。`,
+      confirmText: '换一道',
+      success: r => {
+        if (!r.confirm) return;
+        try { require('../../utils/mock-api.js').resetGames(); }
+        catch (e) { wx.showToast({ title: '重置失败', icon: 'none' }); return; }
+        this.refresh();
+        this.setData({ mockGames: 0 });
+        wx.showToast({ title: '已重置', icon: 'none' });
+      }
+    });
+  }
+  /* <<< MOCK-END <<< */

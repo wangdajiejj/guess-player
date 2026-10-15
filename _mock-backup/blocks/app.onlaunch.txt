@@ -1,0 +1,13 @@
+    /* >>> MOCK-BEGIN：本地测试模式专用，正式包必须删掉 <<< */
+    if (USE_MOCK) {
+      console.warn(
+        '[猜球员] 当前是「本地测试模式」：没有连任何云服务，数据都在你本机。\n' +
+        '        提审前请双击 scripts/关闭本地测试-提审前必点.bat 换回正式版。'
+      );
+      this.globalData.cloudReady = true;
+      this.prefetchPlayers();
+      this.notifyMock();
+      return;
+    }
+    /* <<< MOCK-END <<< */
+

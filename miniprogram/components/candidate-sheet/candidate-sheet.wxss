@@ -1,0 +1,266 @@
+.cs-mask {
+  position: fixed;
+  left: 0; right: 0; top: 0; bottom: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 900;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+.cs-panel {
+  background: #fff;
+  border-radius: 28rpx 28rpx 0 0;
+  height: 80vh;
+  display: flex;
+  flex-direction: column;
+  padding-bottom: env(safe-area-inset-bottom);
+  animation: cs-up 0.22s ease-out;
+}
+
+@keyframes cs-up {
+  from { transform: translateY(60rpx); opacity: 0.6; }
+  to   { transform: translateY(0); opacity: 1; }
+}
+
+.cs-handle {
+  width: 72rpx;
+  height: 8rpx;
+  border-radius: 4rpx;
+  background: #dcdfdc;
+  margin: 16rpx auto 4rpx;
+}
+
+.cs-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12rpx 32rpx 8rpx;
+}
+
+.cs-title-main {
+  display: flex;
+  align-items: baseline;
+}
+
+.cs-title-txt {
+  font-size: 32rpx;
+  font-weight: 500;
+  color: #1f2421;
+}
+
+.cs-count {
+  margin-left: 14rpx;
+  font-size: 24rpx;
+  color: var(--gp-main, #0c5c3b);
+  font-weight: 500;
+}
+
+.cs-close {
+  font-size: 26rpx;
+  color: #9aa09c;
+}
+
+/* ---------------- 条件区 ---------------- */
+
+.cs-cond {
+  padding: 6rpx 0 4rpx;
+}
+
+.cs-cond-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 32rpx 10rpx;
+}
+
+.cs-cond-tip {
+  font-size: 22rpx;
+  color: #9aa09c;
+}
+
+.cs-cond-acts {
+  display: flex;
+  align-items: center;
+}
+
+.cs-act {
+  font-size: 24rpx;
+  color: var(--gp-main, #0c5c3b);
+}
+
+.cs-act-divider {
+  margin: 0 10rpx;
+  color: #d5d9d6;
+  font-size: 22rpx;
+}
+
+.cs-cond-scroll {
+  width: 100%;
+  white-space: nowrap;
+}
+
+.cs-cond-row {
+  display: inline-flex;
+  padding: 0 32rpx;
+}
+
+.cs-chip {
+  display: inline-flex;
+  align-items: baseline;
+  flex-shrink: 0;
+  padding: 8rpx 18rpx;
+  margin-right: 12rpx;
+  border-radius: 10rpx;
+  font-size: 24rpx;
+  line-height: 1.4;
+  background: #f4f6f4;
+  color: #6b716d;
+  border: 2rpx solid transparent;
+}
+
+.cs-chip-label {
+  margin-right: 8rpx;
+  font-size: 22rpx;
+  opacity: 0.75;
+}
+
+/* 启用后按判定色实心显示，和线索卡里的颜色对得上 */
+.cs-chip-on.cs-chip-green { background: #6aaa64; color: #fff; }
+.cs-chip-on.cs-chip-amber { background: #c9b458; color: #fff; }
+.cs-chip-on.cs-chip-gray  { background: #787c7e; color: #fff; }
+
+.cs-cons {
+  padding: 10rpx 32rpx 0;
+  font-size: 22rpx;
+  color: #9aa09c;
+  line-height: 1.6;
+}
+
+.cs-cons-tip {
+  color: #b3b8b5;
+}
+
+.cs-cons-item {
+  margin-right: 14rpx;
+  color: #6b716d;
+}
+
+.cs-hint {
+  padding: 12rpx 32rpx 6rpx;
+  font-size: 22rpx;
+  color: #b3b8b5;
+  border-top: 1rpx solid var(--gp-line, rgba(0,0,0,0.06));
+  margin-top: 12rpx;
+}
+
+/* ---------------- 列表 ---------------- */
+
+.cs-list {
+  flex: 1;
+  overflow: hidden;
+}
+
+.cs-item {
+  display: flex;
+  align-items: flex-start;
+  padding: 18rpx 32rpx;
+  border-bottom: 1rpx solid var(--gp-line, rgba(0,0,0,0.06));
+}
+
+.cs-item-hover {
+  background: #f6f8f6;
+}
+
+.cs-item-done {
+  opacity: 0.45;
+}
+
+.cs-info {
+  flex: 1;
+  margin-left: 20rpx;
+  min-width: 0;
+}
+
+.cs-name-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8rpx;
+}
+
+.cs-name {
+  font-size: 30rpx;
+  color: #1f2421;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+  margin-right: 12rpx;
+}
+
+/* 8 项线索：两列铺开，label 浅灰 + 值深灰，横向对齐方便上下对比 */
+.cs-cells {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.cs-cell {
+  width: 50%;
+  display: flex;
+  align-items: baseline;
+  min-width: 0;
+  margin-bottom: 4rpx;
+  padding-right: 12rpx;
+  box-sizing: border-box;
+}
+
+.cs-cell-label {
+  flex-shrink: 0;
+  font-size: 20rpx;
+  color: #b3b8b5;
+  margin-right: 8rpx;
+}
+
+.cs-cell-value {
+  flex: 1;
+  min-width: 0;
+  font-size: 23rpx;
+  color: #4a4d4f;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cs-tag {
+  flex-shrink: 0;
+  font-size: 20rpx;
+  color: #8a7a26;
+  background: #faf3dc;
+  padding: 4rpx 14rpx;
+  border-radius: 20rpx;
+}
+
+.cs-tag-done {
+  color: #6b716d;
+  background: #eef0ee;
+}
+
+.cs-capped {
+  flex-shrink: 0;
+  padding: 14rpx 32rpx;
+  font-size: 21rpx;
+  line-height: 1.6;
+  color: #8a7a26;
+  background: #faf3dc;
+  white-space: pre-line;
+}
+
+.cs-empty {
+  padding: 120rpx 60rpx;
+  text-align: center;
+  font-size: 26rpx;
+  color: #9aa09c;
+  white-space: pre-line;
+  line-height: 1.8;
+}

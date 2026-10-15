@@ -1,0 +1,133 @@
+.ss-mask {
+  position: fixed;
+  left: 0; right: 0; top: 0; bottom: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 900;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+.ss-panel {
+  background: #fff;
+  border-radius: 28rpx 28rpx 0 0;
+  height: 76vh;
+  display: flex;
+  flex-direction: column;
+  padding-bottom: env(safe-area-inset-bottom);
+  animation: ss-up 0.22s ease-out;
+}
+
+@keyframes ss-up {
+  from { transform: translateY(60rpx); opacity: 0.6; }
+  to   { transform: translateY(0); opacity: 1; }
+}
+
+.ss-handle {
+  width: 72rpx;
+  height: 8rpx;
+  border-radius: 4rpx;
+  background: #dcdfdc;
+  margin: 16rpx auto 4rpx;
+}
+
+.ss-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16rpx 32rpx 8rpx;
+  font-size: 32rpx;
+  font-weight: 500;
+}
+
+.ss-close {
+  font-size: 26rpx;
+  font-weight: 400;
+  color: #9aa09c;
+}
+
+.ss-search {
+  position: relative;
+  padding: 12rpx 32rpx 20rpx;
+}
+
+.ss-input {
+  height: 80rpx;
+  background: #f2f4f2;
+  border-radius: 40rpx;
+  padding: 0 72rpx 0 28rpx;
+  font-size: 28rpx;
+}
+
+.ss-ph {
+  color: #b3b8b5;
+  font-size: 26rpx;
+}
+
+.ss-clear {
+  position: absolute;
+  right: 52rpx;
+  top: 22rpx;
+  width: 60rpx;
+  height: 60rpx;
+  line-height: 56rpx;
+  text-align: center;
+  font-size: 40rpx;
+  color: #9aa09c;
+}
+
+.ss-list {
+  flex: 1;
+  overflow: hidden;
+}
+
+.ss-item {
+  display: flex;
+  align-items: center;
+  padding: 18rpx 32rpx;
+  border-bottom: 1rpx solid var(--gp-line, rgba(0,0,0,0.06));
+}
+
+.ss-item-hover {
+  background: #f6f8f6;
+}
+
+/* 头像由 player-badge 绘制 */
+.ss-info {
+  flex: 1;
+  margin-left: 20rpx;
+  min-width: 0;
+}
+
+.ss-name {
+  font-size: 30rpx;
+  color: #1f2421;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ss-meta {
+  font-size: 22rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ss-tag {
+  flex-shrink: 0;
+  font-size: 20rpx;
+  color: #8a7a26;
+  background: #faf3dc;
+  padding: 4rpx 14rpx;
+  border-radius: 20rpx;
+}
+
+.ss-empty {
+  padding: 100rpx 60rpx;
+  text-align: center;
+  font-size: 26rpx;
+  color: #9aa09c;
+  white-space: pre-line;
+  line-height: 1.8;
+}

@@ -1,0 +1,9 @@
+{
+  "name": "gameResume",
+  "version": "1.0.0",
+  "description": "猜球员 - 续上次对局，重放线索",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~2.6.3"
+  }
+}

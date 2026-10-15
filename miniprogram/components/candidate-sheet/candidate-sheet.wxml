@@ -1,0 +1,93 @@
+<view wx:if="{{panel}}" class="cs-mask" bindtap="onClose" catchtouchmove="noop">
+  <view class="cs-panel" catchtap="noop">
+    <view class="cs-handle"></view>
+
+    <view class="cs-title">
+      <view class="cs-title-main">
+        <text class="cs-title-txt">符合条件的球员</text>
+        <text class="cs-count">{{total}} 人</text>
+      </view>
+      <text class="cs-close" bindtap="onClose">关闭</text>
+    </view>
+
+    <!-- 条件区：点标签增减条件 -->
+    <view class="cs-cond">
+      <view class="cs-cond-head">
+        <text class="cs-cond-tip">点标签可增减条件</text>
+        <view class="cs-cond-acts">
+          <text class="cs-act" bindtap="onAll">全选</text>
+          <text class="cs-act-divider">·</text>
+          <text class="cs-act" bindtap="onNone">清空</text>
+        </view>
+      </view>
+
+      <scroll-view class="cs-cond-scroll" scroll-x enhanced show-scrollbar="{{false}}">
+        <view class="cs-cond-row">
+          <view
+            wx:for="{{cluesView}}"
+            wx:key="id"
+            class="cs-chip cs-chip-{{item.state}} {{item.on ? 'cs-chip-on' : ''}}"
+            data-id="{{item.id}}"
+            bindtap="onToggle"
+          >
+            <text class="cs-chip-label">{{item.label}}</text>
+            <text>{{item.text}}</text>
+          </view>
+        </view>
+      </scroll-view>
+
+      <view wx:if="{{constraints.length && constraints.length < activeCount}}" class="cs-cons">
+        <text class="cs-cons-tip">同字段合并后实际生效 {{constraints.length}} 条：</text>
+        <text wx:for="{{constraints}}" wx:key="key" class="cs-cons-item">{{item.label}}{{item.op}}{{item.text}}</text>
+      </view>
+      <view wx:elif="{{!constraints.length}}" class="cs-cons">
+        <text class="cs-cons-tip">没有启用任何条件，下面是全部候选球员</text>
+      </view>
+    </view>
+
+    <view class="cs-hint">点球员即提交这次猜测</view>
+
+    <scroll-view class="cs-list" scroll-y enhanced show-scrollbar="{{false}}">
+      <block wx:if="{{list.length}}">
+        <view
+          wx:for="{{list}}"
+          wx:key="id"
+          class="cs-item {{item.__done ? 'cs-item-done' : ''}}"
+          hover-class="cs-item-hover"
+          data-index="{{index}}"
+          bindtap="onPick"
+        >
+          <player-badge player="{{item}}" size="64" circle="{{true}}" />
+          <view class="cs-info">
+            <view class="cs-name-row">
+              <text class="cs-name">{{item.name_cn}}</text>
+              <text wx:if="{{item.__done}}" class="cs-tag cs-tag-done">已猜过</text>
+              <text wx:elif="{{item.active === false}}" class="cs-tag">传奇</text>
+            </view>
+            <!-- 8 项线索全铺开，方便逐项和已知线索比对 -->
+            <view class="cs-cells">
+              <view
+                wx:for="{{item.__cells}}"
+                wx:for-item="cell"
+                wx:key="key"
+                class="cs-cell"
+              >
+                <text class="cs-cell-label">{{cell.label}}</text>
+                <text class="cs-cell-value">{{cell.text}}</text>
+              </view>
+            </view>
+          </view>
+        </view>
+      </block>
+
+      <view wx:else class="cs-empty">
+        <text>没有球员同时满足这些条件\n去掉一个条件再试试</text>
+      </view>
+    </scroll-view>
+
+    <!-- 截断要明说，不能让人以为"符合条件的就这么多" -->
+    <view wx:if="{{hidden > 0}}" class="cs-capped">
+      <text>候选共 {{total}} 人，列表只渲染前 {{total - hidden}} 人以免卡顿；点上方任意标签收窄条件后即为完整列表</text>
+    </view>
+  </view>
+</view>

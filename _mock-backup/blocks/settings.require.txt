@@ -1,0 +1,3 @@
+/* >>> MOCK-BEGIN：本地测试模式专用，正式包必须删掉 <<< */
+const api = require('../../utils/api.js');
+/* <<< MOCK-END <<< */

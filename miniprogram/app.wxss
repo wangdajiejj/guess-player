@@ -1,0 +1,77 @@
+/** 全局样式与配色变量 */
+
+page {
+  --gp-green: #6aaa64;
+  --gp-green-dark: #3d7a3a;
+  --gp-green-bg: #eaf3e6;
+  --gp-amber: #c9b458;
+  --gp-amber-dark: #8a7a26;
+  --gp-amber-bg: #faf3dc;
+  --gp-gray: #787c7e;
+  --gp-gray-dark: #4a4d4f;
+  --gp-gray-bg: #eeefee;
+
+  --gp-main: #0c5c3b;
+  --gp-main-light: #148053;
+  --gp-main-bg: #e8f2ee;
+
+  --gp-text: #1f2421;
+  --gp-text-sub: #6b726e;
+  --gp-text-mute: #9aa09c;
+
+  --gp-bg: #f4f6f4;
+  --gp-card: #ffffff;
+  --gp-line: rgba(0, 0, 0, 0.07);
+
+  background: var(--gp-bg);
+  color: var(--gp-text);
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", sans-serif;
+  font-size: 28rpx;
+  line-height: 1.6;
+}
+
+view, text, scroll-view, input, button {
+  box-sizing: border-box;
+}
+
+.gp-card {
+  background: var(--gp-card);
+  border-radius: 16rpx;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.04);
+}
+
+.gp-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 92rpx;
+  border-radius: 46rpx;
+  font-size: 32rpx;
+  font-weight: 500;
+  border: none;
+}
+
+.gp-btn::after { border: none; }
+
+.gp-btn-primary {
+  background: var(--gp-main);
+  color: #fff;
+}
+
+.gp-btn-primary.gp-btn-disabled {
+  background: #b7c2bb;
+}
+
+.gp-btn-ghost {
+  background: #fff;
+  color: var(--gp-main);
+  border: 2rpx solid var(--gp-main);
+}
+
+.gp-page {
+  min-height: 100vh;
+  padding: 24rpx 28rpx calc(40rpx + env(safe-area-inset-bottom));
+}
+
+.gp-mute { color: var(--gp-text-mute); }
+.gp-sub { color: var(--gp-text-sub); }

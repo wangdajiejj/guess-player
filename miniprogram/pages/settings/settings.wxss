@@ -1,0 +1,70 @@
+.settings {
+  padding-bottom: calc(48rpx + env(safe-area-inset-bottom));
+}
+
+.sec { margin-top: 36rpx; }
+
+.sec-title {
+  margin: 0 0 16rpx 8rpx;
+  font-size: 30rpx;
+  font-weight: 600;
+}
+
+.sec-card { padding: 0 32rpx; }
+
+.sec-note {
+  margin: 16rpx 8rpx 0;
+  font-size: 23rpx;
+  line-height: 1.7;
+  color: var(--gp-text-mute);
+}
+
+.cell {
+  display: flex;
+  align-items: center;
+  padding: 26rpx 0;
+}
+
+.cell + .cell { border-top: 2rpx solid var(--gp-line); }
+
+.cell-tap:active { background: var(--gp-bg); }
+
+.cell-body { flex: 1; min-width: 0; }
+
+.cell-name { font-size: 29rpx; }
+
+.cell-desc { font-size: 23rpx; }
+
+.cell-arrow {
+  flex: none;
+  width: 40rpx;
+  text-align: right;
+  color: var(--gp-text-mute);
+  font-size: 36rpx;
+  line-height: 1;
+}
+
+.cell-value {
+  flex: none;
+  color: var(--gp-text-sub);
+  font-size: 26rpx;
+}
+
+.cell-switch { flex: none; transform: scale(0.85); }
+
+.pv-text {
+  padding: 26rpx 0;
+  font-size: 26rpx;
+  line-height: 1.8;
+  color: var(--gp-text-sub);
+}
+
+.feedback-btn {
+  margin-top: 40rpx;
+}
+
+.foot-note {
+  margin-top: 32rpx;
+  text-align: center;
+  font-size: 22rpx;
+}

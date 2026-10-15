@@ -1,0 +1,22 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/game/game",
+    "pages/result/result",
+    "pages/help/help",
+    "pages/settings/settings"
+  ],
+  "window": {
+    "navigationBarTitleText": "猜球员",
+    "navigationBarBackgroundColor": "#0C5C3B",
+    "navigationBarTextStyle": "white",
+    "backgroundColor": "#F4F6F4",
+    "backgroundTextStyle": "dark",
+    "enablePullDownRefresh": false
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json",
+  "lazyCodeLoading": "requiredComponents",
+  "permission": {},
+  "requiredPrivateInfos": []
+}

@@ -1,0 +1,8 @@
+{
+  "navigationBarTitleText": "猜球员",
+  "usingComponents": {
+    "clue-card": "/components/clue-card/clue-card",
+    "search-sheet": "/components/search-sheet/search-sheet",
+    "candidate-sheet": "/components/candidate-sheet/candidate-sheet"
+  }
+}

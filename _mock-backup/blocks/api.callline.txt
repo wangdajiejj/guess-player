@@ -1,0 +1,4 @@
+  /* >>> MOCK-BEGIN <<< */
+  if (useMock()) return callMock(name, data);
+  /* <<< MOCK-END <<< */
+

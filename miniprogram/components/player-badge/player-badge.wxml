@@ -1,0 +1,14 @@
+<view
+  class="pb"
+  style="width:{{size}}rpx; height:{{size}}rpx; background:{{bg}}; border-radius:{{radius}}"
+>
+  <!-- 球衣斜纹：给纯色块一点织物质感，避免 200 张看起来全是色块 -->
+  <view class="pb-stripe"></view>
+  <!-- 暗角：队色偏浅（皇马白、热刺浅蓝）时保证白字仍然看得清 -->
+  <view class="pb-shade"></view>
+
+  <text class="pb-initial" style="font-size:{{fontSize}}rpx">{{initial}}</text>
+
+  <view wx:if="{{showMeta && posText}}" class="pb-pos">{{posText}}</view>
+  <view wx:if="{{showMeta && natText}}" class="pb-nat">{{natText}}</view>
+</view>

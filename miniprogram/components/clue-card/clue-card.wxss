@@ -1,0 +1,86 @@
+.cc-card {
+  background: var(--gp-card, #fff);
+  border-radius: 16rpx;
+  padding: 20rpx 22rpx;
+  margin-bottom: 16rpx;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.04);
+  border: 2rpx solid transparent;
+}
+
+.cc-card.cc-hit {
+  border-color: var(--gp-green, #6aaa64);
+  background: var(--gp-green-bg, #eaf3e6);
+}
+
+.cc-head {
+  display: flex;
+  align-items: center;
+  margin-bottom: 16rpx;
+}
+
+/* 头像由 player-badge 组件绘制（队色渐变 + 首字），这里只负责间距 */
+.cc-id {
+  flex: 1;
+  margin-left: 18rpx;
+  min-width: 0;
+}
+
+.cc-name {
+  font-size: 30rpx;
+  font-weight: 500;
+  color: #1f2421;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cc-en {
+  font-size: 22rpx;
+}
+
+.cc-round {
+  flex-shrink: 0;
+}
+
+.cc-round-txt {
+  font-size: 22rpx;
+  color: #9aa09c;
+}
+
+.cc-hit-badge {
+  font-size: 22rpx;
+  color: #fff;
+  background: var(--gp-green, #6aaa64);
+  padding: 4rpx 16rpx;
+  border-radius: 20rpx;
+}
+
+.cc-chips {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.cc-chip {
+  display: inline-flex;
+  align-items: baseline;
+  padding: 8rpx 16rpx;
+  border-radius: 10rpx;
+  font-size: 24rpx;
+  margin: 0 12rpx 12rpx 0;
+  line-height: 1.4;
+}
+
+.cc-arrow {
+  margin-left: 6rpx;
+  font-size: 24rpx;
+}
+
+/* 对局进行中：标签可点（点了就按这条线索筛候选池） */
+.cc-chip-tap {
+  box-shadow: inset 0 0 0 2rpx rgba(255, 255, 255, 0.5);
+}
+
+.cc-chip-press {
+  transform: scale(0.93);
+  opacity: 0.85;
+}

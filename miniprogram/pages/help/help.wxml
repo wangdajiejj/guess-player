@@ -1,0 +1,184 @@
+<view class="help gp-page">
+
+  <!-- 一句话目标 -->
+  <view class="intro gp-card">
+    <view class="intro-icon">⚽</view>
+    <view class="intro-text">
+      系统会藏着一名球员，你最多猜 <text class="hl">8 次</text>。
+      每猜一次，都会告诉你他在 8 个方面离答案有多近。
+    </view>
+  </view>
+
+  <!-- 颜色含义 -->
+  <view class="sec">
+    <view class="sec-title">颜色怎么看</view>
+    <view class="sec-card gp-card">
+      <view class="lg-row" wx:for="{{legends}}" wx:key="state">
+        <view class="lg-chip" style="background:{{item.bg}}">{{item.short}}</view>
+        <view class="lg-body">
+          <view class="lg-name">{{item.name}}</view>
+          <view class="lg-desc gp-sub">{{item.desc}}</view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 数值字段 -->
+  <view class="sec">
+    <view class="sec-title">年龄 / 身高 / 球衣号</view>
+    <view class="sec-card gp-card">
+      <view class="arrow-row">
+        <view class="ar-item">
+          <text class="ar-sym">↑</text>
+          <text class="ar-txt">猜大了：你填的比答案大</text>
+        </view>
+        <view class="ar-item">
+          <text class="ar-sym">↓</text>
+          <text class="ar-txt">猜小了：你填的比答案小</text>
+        </view>
+        <view class="ar-item">
+          <text class="ar-sym">=</text>
+          <text class="ar-txt">完全相同</text>
+        </view>
+      </view>
+      <view class="sec-note">
+        不算完全一样的，但差距在<text class="hl"> 年龄 2 岁 / 身高 3cm / 号码 3 号 </text>以内时，
+        底色会显示为<text class="hl">黄色</text>，说明已经很接近了。
+      </view>
+    </view>
+  </view>
+
+  <!-- 举例 -->
+  <view class="sec">
+    <view class="sec-title">举个例子</view>
+    <view class="sec-card gp-card">
+      <view class="eg-row">
+        <view class="eg-label">国籍</view>
+        <view class="eg-ca">猜：阿根廷</view>
+        <view class="eg-arrow">→</view>
+        <view class="eg-res"><view class="eg-chip chip-green">阿根廷</view></view>
+        <view class="eg-why">完全一样，绿</view>
+      </view>
+      <view class="eg-row">
+        <view class="eg-label">联赛</view>
+        <view class="eg-ca">答案英超，你猜西甲</view>
+        <view class="eg-arrow">→</view>
+        <view class="eg-res"><view class="eg-chip chip-gray">西甲</view></view>
+        <view class="eg-why">联赛没有"相近"一说，灰</view>
+      </view>
+      <view class="eg-row">
+        <view class="eg-label">位置</view>
+        <view class="eg-ca">答案中锋，你猜影锋</view>
+        <view class="eg-arrow">→</view>
+        <view class="eg-res"><view class="eg-chip chip-amber">影锋</view></view>
+        <view class="eg-why">同属前锋大类，黄</view>
+      </view>
+      <view class="eg-row">
+        <view class="eg-label">身高</view>
+        <view class="eg-ca">答案 185，你猜 170</view>
+        <view class="eg-arrow">→</view>
+        <view class="eg-res"><view class="eg-chip chip-gray">170cm ↓</view></view>
+        <view class="eg-why">差 15cm，灰 + 向下箭头</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 点标签筛选 -->
+  <view class="sec">
+    <view class="sec-title">点标签，直接缩小范围</view>
+    <view class="sec-card gp-card">
+      <view class="ai-text">
+        线索卡上的 8 个标签<text class="hl">都可以点</text>。
+        点一下，就列出所有还符合这条线索的球员，不用你自己翻名单。
+      </view>
+      <view class="tip-list">
+        <view class="tip-item">
+          <text class="tip-chip chip-green">绿</text>
+          <text class="tip-v">筛出和答案一样的人 —— 点「右脚」，就只看右脚球员</text>
+        </view>
+        <view class="tip-item">
+          <text class="tip-chip chip-amber">黄</text>
+          <text class="tip-v">按放宽条件筛 —— 同联赛、同大类、数值接近的人</text>
+        </view>
+        <view class="tip-item">
+          <text class="tip-chip chip-gray">灰</text>
+          <text class="tip-v">把它排除掉 —— 点「巴西」，名单里就不再出现巴西球员</text>
+        </view>
+      </view>
+      <view class="sec-note">
+        进面板后还能继续勾选其它线索叠加。默认只启用你点的那一条：
+        全部叠上去基本等于直接给答案，那就没意思了。
+      </view>
+    </view>
+  </view>
+
+  <!-- 模式 -->
+  <view class="sec">
+    <view class="sec-title">两种玩法</view>
+    <view class="sec-card gp-card">
+      <view class="mode-item">
+        <view class="mode-name">每日一题</view>
+        <view class="mode-desc gp-sub">
+          每天一题。同一天内无论重进多少次、中途退出多少次，
+          题目和已猜记录都不会变。新的一天自动换新题。
+        </view>
+      </view>
+      <view class="mode-item">
+        <view class="mode-name">自由练习</view>
+        <view class="mode-desc gp-sub">
+          随时开新一局，每次都是随机球员，没有次数上限。
+          中途退出可以回来接着猜。
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 音效 -->
+  <view class="sec">
+    <view class="sec-title">音效与振动</view>
+    <view class="sec-card gp-card">
+      <view class="ai-text">
+        点击、筛选、猜中、猜错各有一小段提示音，猜中时是一段上行琶音。
+        音效由程序实时合成，不占用小程序体积，也不需要联网加载。
+        不想要的话，在<text class="hl">设置</text>里把音效和振动分别关掉即可。
+      </view>
+    </view>
+  </view>
+
+  <!-- 隐私 -->
+  <view class="sec">
+    <view class="sec-title">数据与隐私</view>
+    <view class="sec-card gp-card">
+      <view class="pv-item">
+        <text class="pv-dot">·</text>
+        <text class="pv-txt">不需要登录，不获取手机号、通讯录、位置</text>
+      </view>
+      <view class="pv-item">
+        <text class="pv-dot">·</text>
+        <text class="pv-txt">只用一个随机生成的身份标识来存你的对局进度</text>
+      </view>
+      <view class="pv-item">
+        <text class="pv-dot">·</text>
+        <text class="pv-txt">历史战绩只存在你手机本地，卸载即清空</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 球员形象 -->
+  <view class="sec">
+    <view class="sec-title">关于球员形象</view>
+    <view class="sec-card gp-card">
+      <view class="ai-text">
+        游戏里的小头像<text class="hl">不是照片</text>：它是按球员所属球队的配色
+        现画出来的色块，中间是姓氏首字，右下角标位置。
+        不使用任何真人照片或 AI 人像，也不含俱乐部徽章与赞助商标识。
+      </view>
+      <view class="ai-badge">程序绘制</view>
+    </view>
+  </view>
+
+  <view class="foot-note gp-mute">
+    数据快照：{{dataAsOf}} · 如有错漏欢迎反馈
+  </view>
+
+</view>

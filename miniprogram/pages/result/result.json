@@ -1,0 +1,7 @@
+{
+  "navigationBarTitleText": "本局结果",
+  "usingComponents": {
+    "clue-card": "/components/clue-card/clue-card",
+    "player-badge": "/components/player-badge/player-badge"
+  }
+}

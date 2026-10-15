@@ -1,0 +1,9 @@
+{
+  "name": "gameStart",
+  "version": "1.0.0",
+  "description": "猜球员 - 幂等开局",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~2.6.3"
+  }
+}

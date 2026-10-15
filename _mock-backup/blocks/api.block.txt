@@ -1,0 +1,39 @@
+/* >>> MOCK-BEGIN：本地测试模式专用，正式包必须删掉 <<< */
+
+/** 本地假造一点网络延迟，免得 Mock 下 loading 一闪而过看不清 */
+function delay(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function useMock() {
+  try { return !!(app() && app().globalData && app().globalData.useMock); }
+  catch (e) { return false; }
+}
+
+function mkErr(code, msg) {
+  const e = new Error(msg);
+  e.code = code;
+  e.serverMsg = msg;
+  return e;
+}
+
+function callMock(name, data) {
+  let mock;
+  try {
+    mock = require('./mock-api.js');
+  } catch (e) {
+    return Promise.reject(mkErr(-1, 'mock-api.js 不存在，请双击 scripts/开启本地测试.bat 重新安装'));
+  }
+  const table = {
+    gameStart: () => mock.gameStart(data.mode),
+    gameGuess: () => mock.gameGuess(data.gameId, data.playerId),
+    gameResume: () => mock.gameResume(data.gameId),
+    gameResult: () => mock.gameResult(data.gameId),
+    getPlayers: () => mock.getPlayers(data.version)
+  };
+  const fn = table[name];
+  if (!fn) return Promise.reject(mkErr(-1, 'Mock 未实现接口：' + name));
+  return delay(name === 'getPlayers' ? 60 : 140).then(() => unwrap(fn()));
+}
+/* <<< MOCK-END <<< */
+

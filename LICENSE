@@ -1,0 +1,31 @@
+MIT License
+
+Copyright (c) 2026 wangdajiejj
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+---
+
+数据部分（database/players.full.jsonl）的说明：
+
+- 球员姓名、国籍、俱乐部、联赛、出生日期、身高、惯用脚、球衣号等属于事实性信息，
+  不受著作权保护，随本仓库一同以 MIT 许可开放。
+- intro / fun_fact / meme 三字段为本仓库自行撰写的中文文案，同样适用 MIT 许可。
+- 本仓库不含任何队徽、赞助商标识与球员照片。球员头像由代码现场绘制
+  （见 miniprogram/components/player-badge），不使用真人肖像。

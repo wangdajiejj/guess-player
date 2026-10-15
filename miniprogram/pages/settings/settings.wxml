@@ -1,0 +1,124 @@
+<view class="settings gp-page">
+
+  <!-- 通用 -->
+  <view class="sec">
+    <view class="sec-title">通用</view>
+    <view class="sec-card gp-card">
+      <view class="cell">
+        <view class="cell-body">
+          <view class="cell-name">提交猜测时振动</view>
+          <view class="cell-desc gp-sub">关闭后仅保留视觉反馈</view>
+        </view>
+        <switch
+          class="cell-switch"
+          checked="{{settings.vibrate}}"
+          color="#0c5c3b"
+          bindchange="onVibrate"
+        />
+      </view>
+
+      <view class="cell">
+        <view class="cell-body">
+          <view class="cell-name">音效</view>
+          <view class="cell-desc gp-sub">{{sfxAvailable ? '点击、筛选、猜中都有不同音效' : '当前微信版本不支持音效，已自动关闭'}}</view>
+        </view>
+        <switch
+          class="cell-switch"
+          checked="{{settings.sound}}"
+          disabled="{{!sfxAvailable}}"
+          color="#0c5c3b"
+          bindchange="onSound"
+        />
+      </view>
+    </view>
+    <view class="sec-note">
+      音效由程序实时合成，不占用小程序体积；所有开关都只存在本机。
+    </view>
+  </view>
+
+  <!-- 数据 -->
+  <view class="sec">
+    <view class="sec-title">数据</view>
+    <view class="sec-card gp-card">
+      <view class="cell cell-tap" bindtap="clearStats">
+        <view class="cell-body">
+          <view class="cell-name">清除本地战绩</view>
+          <view class="cell-desc gp-sub">已玩 {{stats.played}} 局 · 胜率 {{winRate}}%</view>
+        </view>
+        <text class="cell-arrow">›</text>
+      </view>
+
+      <view class="cell cell-tap" bindtap="clearCache">
+        <view class="cell-body">
+          <view class="cell-name">刷新球员题库</view>
+          <view class="cell-desc gp-sub">缓存 {{poolCount}} 人 · 版本 {{versionText}}</view>
+        </view>
+        <text class="cell-arrow">›</text>
+      </view>
+    </view>
+    <view class="sec-note">
+      战绩和题库缓存都只存在本机，清除后不可恢复；清除不会影响正在进行中的对局。
+    </view>
+  </view>
+
+  <!-- >>> MOCK-BEGIN：本地测试模式专用，提审前必须删掉这段 <<< -->
+  <view class="sec" wx:if="{{mockMode}}">
+    <view class="sec-title">本地测试</view>
+    <view class="sec-card gp-card">
+      <view class="cell cell-tap" bindtap="resetMock">
+        <view class="cell-body">
+          <view class="cell-name">换一道每日一题</view>
+          <view class="cell-desc gp-sub">本机已存 {{mockGames}} 局测试对局</view>
+        </view>
+        <text class="cell-arrow">›</text>
+      </view>
+    </view>
+    <view class="sec-note">
+      当前跑在「本地测试模式」：没有连任何云服务，数据全在本机。
+      提审前请双击 scripts/关闭本地测试-提审前必点.bat。
+    </view>
+  </view>
+  <!-- <<< MOCK-END <<< -->
+
+  <!-- 关于 -->
+  <view class="sec">
+    <view class="sec-title">关于</view>
+    <view class="sec-card gp-card">
+      <view class="cell cell-tap" bindtap="goHelp">
+        <view class="cell-body"><view class="cell-name">规则说明</view></view>
+        <text class="cell-arrow">›</text>
+      </view>
+
+      <view class="cell">
+        <view class="cell-body"><view class="cell-name">版本</view></view>
+        <text class="cell-value">1.0.0</text>
+      </view>
+
+      <view class="cell">
+        <view class="cell-body"><view class="cell-name">数据快照</view></view>
+        <text class="cell-value">2026-10-11</text>
+      </view>
+
+      <view class="cell">
+        <view class="cell-body"><view class="cell-name">玩家人数</view></view>
+        <text class="cell-value">{{poolCount || '—'}} 名</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 隐私 -->
+  <view class="sec">
+    <view class="sec-title">隐私</view>
+    <view class="sec-card gp-card">
+      <view class="pv-text">
+        本小程序不收集任何个人信息，不需要登录，不读取手机号、通讯录或位置信息。
+        仅使用一个平台生成的匿名标识来保存你的对局进度。
+      </view>
+    </view>
+  </view>
+
+  <button class="gp-btn gp-btn-ghost feedback-btn" open-type="feedback">意见反馈</button>
+
+  <view class="foot-note gp-mute">球员形象由程序按球队配色现画，不使用真人照片</view>
+
+</view>

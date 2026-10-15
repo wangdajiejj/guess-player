@@ -1,0 +1,51 @@
+<view wx:if="{{show}}" class="ss-mask" bindtap="onClose" catchtouchmove="noop">
+  <view class="ss-panel" catchtap="noop">
+    <view class="ss-handle"></view>
+
+    <view class="ss-title">
+      <text>选择球员</text>
+      <text class="ss-close" bindtap="onClose">关闭</text>
+    </view>
+
+    <view class="ss-search">
+      <input
+        class="ss-input"
+        value="{{keyword}}"
+        placeholder="中文名 / 英文名 / 绰号 / 拼音首字母"
+        placeholder-class="ss-ph"
+        focus="{{focus}}"
+        confirm-type="search"
+        bindinput="onInput"
+        bindconfirm="onConfirm"
+      />
+      <text wx:if="{{keyword}}" class="ss-clear" bindtap="onClear">×</text>
+    </view>
+
+    <scroll-view class="ss-list" scroll-y enhanced show-scrollbar="{{false}}">
+      <block wx:if="{{list.length}}">
+        <view
+          wx:for="{{list}}"
+          wx:key="id"
+          class="ss-item"
+          hover-class="ss-item-hover"
+          data-index="{{index}}"
+          bindtap="onPick"
+        >
+          <player-badge player="{{item}}" size="64" circle="{{true}}" />
+          <view class="ss-info">
+            <view class="ss-name">{{item.name_cn}}</view>
+            <view class="ss-meta gp-sub">
+              {{item.club}} · {{item.league}} · {{item.position}}
+            </view>
+          </view>
+          <view wx:if="{{item.active === false}}" class="ss-tag">传奇</view>
+        </view>
+      </block>
+
+      <view wx:else class="ss-empty">
+        <text wx:if="{{searched}}">没找到「{{keyword}}」\n换个名字或绰号试试？</text>
+        <text wx:else class="gp-mute">还没有输入\n试着搜「梅」「mbp」「姆总监」</text>
+      </view>
+    </scroll-view>
+  </view>
+</view>
