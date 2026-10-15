@@ -82,10 +82,15 @@ const ask = (rl, q) => new Promise(resolve => {
   console.log(`  remote origin = ${clean}`);
   console.log('');
 
-  /* 这一次 push 才带上 token */
+  /* 这一次 push 才带上 token。
+   *
+   * ⚠️ 千万别加 -u：git 会把「分支追踪的 remote」直接存成这一整串带 token 的 URL，
+   *    写进 .git/config（branch.main.remote），于是 token 就落盘了 ——
+   *    正是文件头那段注释里要避免的事。实测踩过一次。
+   *    正确做法是：不带 -u 推，推完再把上游指回干净的 origin。 */
   const withToken = `https://${user}:${encodeURIComponent(token)}@github.com/${user}/${REPO}.git`;
   try {
-    git('push', '-u', withToken, 'main');
+    git('push', withToken, 'main');
   } catch (e) {
     console.log('');
     console.log('  -----------------------------------------------');
@@ -100,11 +105,32 @@ const ask = (rl, q) => new Promise(resolve => {
     return;
   }
 
+  /* 把上游指回干净的 origin（不带 token 的那个） */
+  git('remote', 'set-branches', 'origin', 'main');
+  try { git('branch', '--set-upstream-to=origin/main', 'main'); } catch (e) { /* 首次可能已设好 */ }
+
+  /* 兜底自检：.git/config 里绝不能出现 token */
+  try {
+    const cfg = gitOut('config', '--local', '--list');
+    if (/gh[pousr]_/.test(cfg)) {
+      console.log('  -----------------------------------------------');
+      console.log('  ⚠️ token 被写进了 .git/config，正在清理…');
+      console.log('  -----------------------------------------------');
+      git('config', '--local', '--unset-all', 'branch.main.remote');
+      git('config', '--local', 'branch.main.remote', 'origin');
+      git('config', '--local', 'branch.main.merge', 'refs/heads/main');
+    }
+  } catch (e) { /* 读不到就算了 */ }
+
   console.log('');
   console.log('============================================================');
   console.log(`  成功！打开看：https://github.com/${user}/${REPO}`);
   console.log('============================================================');
   console.log('');
   console.log('  以后再推新改动：git push（会再问一次 PAT，也可以去装个 GitHub Desktop 免输）');
+  console.log('');
+  console.log('  若报 schannel: CRYPT_E_NO_REVOCATION_CHECK，见 README-启动.md 的排障表：');
+  console.log('    git config --local http.sslBackend schannel');
+  console.log('    git config --local http.schannelCheckRevoke false');
   console.log('');
 })();

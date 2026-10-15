@@ -19,13 +19,3 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-
----
-
-数据部分（database/players.full.jsonl）的说明：
-
-- 球员姓名、国籍、俱乐部、联赛、出生日期、身高、惯用脚、球衣号等属于事实性信息，
-  不受著作权保护，随本仓库一同以 MIT 许可开放。
-- intro / fun_fact / meme 三字段为本仓库自行撰写的中文文案，同样适用 MIT 许可。
-- 本仓库不含任何队徽、赞助商标识与球员照片。球员头像由代码现场绘制
-  （见 miniprogram/components/player-badge），不使用真人肖像。

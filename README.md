@@ -84,4 +84,16 @@ scripts\一键测试.bat
 
 ## License
 
-[MIT](LICENSE)。数据部分的授权范围见 LICENSE 末尾。
+[MIT](LICENSE)。
+
+> LICENSE 文件保持标准 MIT 模板、一字不改 —— GitHub 靠模板匹配自动识别许可证，
+> 往末尾追加段落会让它识别成 `NOASSERTION`（仓库页就显示不出 MIT 徽章）。
+> 下面这段说明原本写在 LICENSE 末尾，因此移到这里。
+
+数据部分（`database/players.full.jsonl`）的授权范围：
+
+- 球员姓名、国籍、俱乐部、联赛、出生日期、身高、惯用脚、球衣号等属于**事实性信息**，
+  不受著作权保护，随本仓库一同以 MIT 许可开放。
+- `intro` / `fun_fact` / `meme` 三字段为本仓库**自行撰写的中文文案**，同样适用 MIT。
+- 本仓库**不含**任何队徽、赞助商标识与球员照片。球员头像由代码现场绘制
+  （见 `miniprogram/components/player-badge`），不使用真人肖像。

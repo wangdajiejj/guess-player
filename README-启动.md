@@ -254,7 +254,7 @@ node scripts/toggle-mock.js on     # 如果在本地测试模式，重跑一下�
 | 现象 | 原因 / 怎么办 |
 | --- | --- |
 | 「不是合法的小程序项目」 | 导入目录选错了，要选包含 `project.config.json` 的那层 |
-| **「云开发」按钮点不了 / 灰的** | 见「路线 B 第 2 步」开头那张自查表，99% 是 AppID 还是模板里的假值 |
+| **「云开发」按钮点不了 / 灰的** | 见「路线 B 第 2 步」开头那张自查表，99% 是 `project.config.json` 里的 `appid` 还是占位值 `touristappid` |
 | 云开发控制台里 `cloudfunctions` 显示「未选中」 | 云环境还没开通，或没在「云开发 → 设置 → 环境」里选中环境（开通后自动选中） |
 | 首页写「云环境没连上……」 | `app.js` 的 `ENV_ID` 还是模板里的假值，换成你自己的 |
 | 首页写「云函数还没上传……」 | 右击 `cloudfunctions/xxx` → 上传并部署（5 个都要） |
@@ -263,6 +263,9 @@ node scripts/toggle-mock.js on     # 如果在本地测试模式，重跑一下�
 | 没有任何报错但页面不渲染 | 跑 `node scripts/check-mp.js`，多半是组件没注册 |
 | 搜索什么都搜不到 | 本地测试模式下重启小程序；云模式看 `players` 集合是否导入 |
 | 猜完没有反应，一直转圈 | 打开控制台看是不是报了某个 code（1005=重复、1002=对局不存在） |
+| `git push` 报 `schannel: CRYPT_E_NO_REVOCATION_CHECK (0x80092012)` | **不是 GitHub 的问题，是本机代理做了 TLS 中间人，Windows 又拉不到证书吊销列表（CRL）。** 别去关 `sslVerify`（等于放弃校验），只关吊销检查即可：<br>`git config --local http.sslBackend schannel`<br>`git config --local http.schannelCheckRevoke false`<br>（只写进 `.git/config`，不进版本库，不影响别人） |
+| `git push` 报 `unable to get local issuer certificate` | 同上，但说明 git 用的 OpenSSL 后端（它不认 Windows 证书存储里的代理 CA）。按上面两条设成 schannel 后端即可 |
+| 想确认 PAT 有没有权限 | `curl -u 用户名:PAT https://api.github.com/user`，看返回的 `X-OAuth-Scopes` 里有没有 `repo` |
 | 换了一天，每日一题还是那道题 | 日期用的是 UTC+8 自然日，跨零点要等过了北京时间 0 点 |
 | 点线索标签没反应 | 只有对局进行中才能点（猜完那一局就锁了） |
 | 筛选面板里人数是 0 | 条件互相打架，去掉一个再试（正常情况不会出现） |
