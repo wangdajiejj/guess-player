@@ -115,5 +115,6 @@
     date-key="{{dateKey}}"
     bind:close="closeCand"
     bind:select="onCandSelect"
+    bind:state="onCandState"
   />
 </view>

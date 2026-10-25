@@ -107,6 +107,7 @@ Page({
 
   applyGame(d) {
     if (!d) throw new Error('返回数据为空');
+    this._candKeep = [];   // 新对局，筛选面板的勾选从零开始
     S.saveLastGame(d.gameId, 'reveal');
     const guesses = (d.rows || []).map(r => ({ round: r.round, player: r.player }));
     this.setData({
@@ -254,7 +255,12 @@ Page({
         guess: null
       }));
     if (!clues.length) return;
-    this.setData({ candPanel: { clues, initial: ['rv:' + key] } });
+    this.setData({ candPanel: { clues, initial: ['rv:' + key], keep: this._candKeep || [] } });
+  },
+
+  /** 面板回报勾选状态：存起来，下次打开面板带回去（同局内不丢） */
+  onCandState(e) {
+    this._candKeep = (e.detail && e.detail.active) || [];
   },
 
   closeCand(e) {

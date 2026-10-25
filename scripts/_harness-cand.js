@@ -31,6 +31,8 @@ function makeComp(players) {
     Object.assign(inst.data, patch);
     if (typeof cb === 'function') inst._pending.push(cb);
   };
+  inst.events = [];   // triggerEvent 收集槽
+  inst.triggerEvent = (name, detail) => { inst.events.push({ name, detail }); };
   inst.flush = () => { while (inst._pending.length) inst._pending.shift()(); };
   // 把 methods 绑上去
   Object.keys(compDef.methods).forEach(k => { inst[k] = compDef.methods[k].bind(inst); });
@@ -120,6 +122,29 @@ console.log(`场景6 亮着的 chips：${JSON.stringify(onChip.map(c => c.label 
 const comp7 = makeCompNoCb([]);
 comp7._onPanel({ clues: all, initial: ['2:preferred_foot'] });
 console.log(`\n场景7（空池）total=${comp7.data.total} poolEmpty=${comp7.data.poolEmpty} cluesView=${comp7.data.cluesView.length}`);
+
+/* ---------- 场景 9：keep —— 上次勾选带回，只留仍存在的线索 ---------- */
+const comp9 = makeCompNoCb(ALL.map(p => ({ ...p })));
+comp9.properties.panel = { clues: all, initial: ['2:preferred_foot'] };
+comp9._onPanel(comp9.properties.panel);
+// 模拟用户又勾了两条 + 组件回报状态
+const footGreen = comp9.data.cluesView.filter(c => c.id === '2:preferred_foot')[0].id;
+const natChip = comp9.data.cluesView.filter(c => /:nationality$/.test(c.id))[0].id;
+comp9.onToggle({ currentTarget: { dataset: { id: natChip } } });
+const stateEv = comp9.events.filter(e => e.name === 'state').pop();
+console.log(`\n场景9（state 回报）active=${JSON.stringify(stateEv.detail.active)}`);
+// 重开面板：keep 带回上次勾选 + 新点的一条；stale id 应被过滤
+comp9._onPanel({
+  clues: all, initial: ['2:shirt_number'],
+  keep: stateEv.detail.active.concat(['9:not-exist:stale'])
+});
+console.log(`场景9（重开带 keep）active=${JSON.stringify(comp9.data.active)} activeCount=${comp9.data.activeCount}`);
+console.log(`场景9 摘要=${JSON.stringify(comp9.data.constraints.map(c => c.label + c.op + c.text))}`);
+const ok9 = comp9.data.active.indexOf('2:preferred_foot') !== -1
+  && comp9.data.active.indexOf(natChip) !== -1
+  && comp9.data.active.indexOf('2:shirt_number') !== -1
+  && comp9.data.active.indexOf('9:not-exist:stale') === -1;
+console.log(`场景9 结论=${ok9 ? '✓ 上次条件保留 + 新点叠加 + 失效条件过滤' : '✗ 行为不符'}`);
 
 /* ---------- 场景 8：旧缓存池（缺答案）热替换后自动重筛 ---------- */
 const stalePool = ALL.slice(0, 40);   // 假装缓存是只有 40 人的旧包

@@ -2497,7 +2497,8 @@ window.GP = {
     searchHl: 0,
     searchResults: [],
     submitting: false,
-    revealing: false
+    revealing: false,
+    candKeep: []            // 同一局内记住上次面板勾选的条件，重开时带回来
   };
 
   /* ---------------- 头像徽章 ---------------- */
@@ -2631,6 +2632,7 @@ window.GP = {
     var d = r.data;
     if (d.status !== 'playing') { openResult(d.gameId); return; }
     S.game = d;
+    S.candKeep = [];        // 新一局，条件从零开始
     S.submitting = false;
     S.revealing = false;
     S.searchKw = ''; S.searchHl = 0; S.searchResults = [];
@@ -2830,10 +2832,22 @@ window.GP = {
     if (!picked) { toast('这条线索暂时用不上'); return; }
     var d = clue.dedupeClues(all);
     var rep = d.idRemap[picked.id] || picked.id;
-    S.cand = { clues: d.clues, active: [rep] };
+    S.cand = { clues: d.clues, active: keepUnion(d.clues, rep) };
     sfx('tap');
     renderSheet();
     $('mask').classList.add('on');
+  }
+
+  /** 重开面板时把上次勾的条件带回来：只保留当前仍存在的线索，再叠上这次点的 */
+  function keepUnion(clues, rep) {
+    var valid = {};
+    clues.forEach(function (c) { valid[c.id] = 1; });
+    var active = [];
+    (S.candKeep || []).forEach(function (id) {
+      if (valid[id] && id !== rep && active.indexOf(id) === -1) active.push(id);
+    });
+    active.push(rep);
+    return active;
   }
 
   /** 反向猜球：点已揭线索槽，用绿色精确条件筛（与小程序 onSlotTap 同构） */
@@ -2843,7 +2857,7 @@ window.GP = {
     var picked = clues.filter(function (c) { return c.key === slotKey; })[0];
     if (!picked) return;
     sfx('tap');
-    S.cand = { clues: clues, active: [picked.id] };
+    S.cand = { clues: clues, active: keepUnion(clues, picked.id) };
     renderSheet();
     $('mask').classList.add('on');
   }
@@ -2874,6 +2888,7 @@ window.GP = {
   function renderSheet() {
     var c = S.cand;
     if (!c) return;
+    S.candKeep = (c.active || []).slice();   // 勾选变化随时记住，关面板再开不丢
     var mask = $('mask');
     clear(mask);
     var sheet = el('div', { class: 'sheet' });

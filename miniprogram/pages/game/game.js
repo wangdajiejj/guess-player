@@ -140,6 +140,7 @@ Page({
   /** 把服务端返回的对局状态落到 data */
   applyGame(d) {
     if (!d) throw new Error('返回数据为空');
+    this._candKeep = [];   // 新对局，筛选面板的勾选从零开始
 
     const pool = this.data.players || [];
     // 服务端 replayRows 已带 player；本地候选池只是兜底
@@ -232,10 +233,15 @@ Page({
       wx.showToast({ title: '这条线索暂时用不上', icon: 'none' });
       return;
     }
-    // 线索和初始条件必须一次性传进去，否则组件可能先拿到旧的线索池
+    // 线索、初始条件和上次勾选（keep）必须一次性传进去，否则组件可能先拿到旧的线索池
     this.setData({
-      candPanel: { clues: all, initial: [picked.id] }
+      candPanel: { clues: all, initial: [picked.id], keep: this._candKeep || [] }
     });
+  },
+
+  /** 面板回报勾选状态：存起来，下次打开面板带回去（同局内不丢） */
+  onCandState(e) {
+    this._candKeep = (e.detail && e.detail.active) || [];
   },
 
   closeCand(e) {

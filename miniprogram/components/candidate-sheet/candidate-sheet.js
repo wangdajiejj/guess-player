@@ -106,6 +106,13 @@ Component({
         const rep = idRemap[id];
         if (rep && active.indexOf(rep) === -1) active.push(rep);
       });
+      // 上次面板里勾过的条件带回来（页面经 keep 传入）：只留当前仍存在的线索
+      const live = {};
+      clues.forEach(c => { live[c.id] = 1; });
+      (v.keep || []).forEach(id => {
+        const rep = idRemap[id] || id;
+        if (live[rep] && active.indexOf(rep) === -1) active.push(rep);
+      });
 
       // setData 后逻辑层 data 立即更新，直接同步重算；
       // 不走 setData 回调——回调在部分生命周期阶段可能不触发，会把面板卡在空数据上
@@ -152,6 +159,9 @@ Component({
         hidden: Math.max(0, ordered.length - RENDER_CAP),
         poolEmpty: !this.properties.players.length
       });
+
+      // 把当前勾选回报给页面（页面存起来，下次打开面板经 keep 带回）
+      this.triggerEvent('state', { active: (this.data.active || []).slice() });
     },
 
     onToggle(e) {
