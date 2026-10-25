@@ -50,6 +50,7 @@ function reg(id) { const e = new FakeEl('div'); e.id = id; registry[id] = e; ret
 
 global.document = {
   readyState: 'complete',
+  body: new FakeEl('body'),
   createElement: t => new FakeEl(t),
   createTextNode: t => { const n = new FakeEl('#text'); n.__text = String(t); n.textContent = String(t); return n; },
   getElementById: id => registry[id] || null,

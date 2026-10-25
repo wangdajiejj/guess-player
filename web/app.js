@@ -25,7 +25,7 @@
     try { localStorage.setItem(k, v); } catch (e) { memStore[k] = v; }
   }
 
-  var SETTINGS = { sound: true };
+  var SETTINGS = { sound: true, musicTrack: 't1', musicVol: 0.5 };
   try { Object.assign(SETTINGS, JSON.parse(lsGet('gpweb_settings') || '{}')); } catch (e) {}
 
   function loadStats() {
@@ -37,31 +37,284 @@
 
   /* ---------------- 音效（WebAudio 现场合成，与小程序同一套参数思路） ---------------- */
 
-  var audioCtx = null;
-  function tone(freq, dur, delay, type, vol) {
+  /* ---------------- 音频：SFX 重制 + 生成式背景音乐（零素材） ----------------
+   *
+   * 全部 WebAudio 现场合成。总线结构：
+   *   sfxBus / musicBus → 主输出；另有一条共享反馈延迟做空间感。
+   * 浏览器自动播放策略：首次用户手势时才创建/恢复 AudioContext。
+   */
+
+  var AC = null, musicBus = null, sfxBus = null, delayIn = null, noiseBuf = null;
+  var audioErrors = [];
+  window.__audioDebug = function () { return { hasCtx: !!AC, state: AC ? AC.state : 'none', errors: audioErrors, music: Music.info() }; };
+
+  function ctx() {
+    if (AC) return AC;
     try {
-      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      if (audioCtx.state === 'suspended') audioCtx.resume();
-      var t0 = audioCtx.currentTime + (delay || 0);
-      var osc = audioCtx.createOscillator();
-      var gain = audioCtx.createGain();
-      osc.type = type || 'sine';
-      osc.frequency.value = freq;
-      gain.gain.setValueAtTime(0.0001, t0);
-      gain.gain.exponentialRampToValueAtTime(vol || 0.1, t0 + 0.012);
-      gain.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
-      osc.connect(gain); gain.connect(audioCtx.destination);
-      osc.start(t0); osc.stop(t0 + dur + 0.03);
-    } catch (e) { /* 出不了声就安静 */ }
+      AC = new (window.AudioContext || window.webkitAudioContext)();
+      musicBus = AC.createGain();
+      musicBus.gain.value = 0.5 * 2 * (SETTINGS.musicVol != null ? SETTINGS.musicVol : 0.5);
+      musicBus.connect(AC.destination);
+      sfxBus = AC.createGain();
+      sfxBus.gain.value = 0.9;
+      sfxBus.connect(AC.destination);
+      var dly = AC.createDelay(1.0);
+      dly.delayTime.value = 0.27;
+      var fb = AC.createGain(); fb.gain.value = 0.32;
+      var wet = AC.createGain(); wet.gain.value = 0.5;
+      dly.connect(fb); fb.connect(dly);
+      dly.connect(wet); wet.connect(AC.destination);
+      delayIn = dly;
+      var len = AC.sampleRate * 0.4;
+      noiseBuf = AC.createBuffer(1, len, AC.sampleRate);
+      var ch = noiseBuf.getChannelData(0);
+      for (var i = 0; i < len; i++) ch[i] = Math.random() * 2 - 1;
+    } catch (e) {
+      audioErrors.push('ctx: ' + e.message);
+      AC = null;
+    }
+    return AC;
   }
-  function sfx(name) {
-    if (!SETTINGS.sound) return;
-    if (name === 'tap') tone(660, 0.05, 0, 'sine', 0.06);
-    else if (name === 'open') { tone(520, 0.07, 0, 'sine', 0.07); tone(780, 0.07, 0.05, 'sine', 0.07); }
-    else if (name === 'close') tone(420, 0.06, 0, 'sine', 0.05);
-    else if (name === 'miss') { tone(300, 0.09, 0, 'triangle', 0.09); tone(240, 0.1, 0.07, 'triangle', 0.08); }
-    else if (name === 'hit') { tone(523, 0.1, 0, 'sine', 0.1); tone(659, 0.1, 0.09, 'sine', 0.1); tone(784, 0.16, 0.18, 'sine', 0.11); }
-    else if (name === 'lose') { tone(320, 0.14, 0, 'triangle', 0.09); tone(240, 0.2, 0.12, 'triangle', 0.09); }
+
+  var mtof = function (m) { return 440 * Math.pow(2, (m - 69) / 12); };
+
+  /** 基础音色：振荡器 + 指数包络，可挂滤波与延迟发送 */
+  function voice(o) {
+    var ac = ctx();
+    if (!ac) return;
+    try {
+      var t = ac.currentTime + (o.at || 0);
+      var osc = ac.createOscillator();
+      osc.type = o.type || 'sine';
+      osc.frequency.setValueAtTime(o.f, t);
+      if (o.f2) osc.frequency.exponentialRampToValueAtTime(o.f2, t + (o.glide || o.dur));
+      var g = ac.createGain();
+      var vol = o.vol || 0.1;
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(vol, t + (o.atk || 0.01));
+      g.gain.exponentialRampToValueAtTime(0.0001, t + o.dur);
+      var out = g;
+      if (o.lp) {
+        var f = ac.createBiquadFilter();
+        f.type = 'lowpass'; f.frequency.value = o.lp;
+        g.connect(f); out = f;
+      }
+      osc.connect(g);
+      out.connect(o.bus || sfxBus);
+      if (o.echo) {
+        var send = ac.createGain(); send.gain.value = o.echo;
+        out.connect(send); send.connect(delayIn);
+      }
+      osc.start(t);
+      osc.stop(t + o.dur + 0.05);
+    } catch (e) { audioErrors.push('voice: ' + e.message); }
+  }
+
+  /** 噪声瞬态：hat / clap / whoosh 共用 */
+  function noiseHit(o) {
+    var ac = ctx();
+    if (!ac) return;
+    try {
+      var t = ac.currentTime + (o.at || 0);
+      var src = ac.createBufferSource();
+      src.buffer = noiseBuf;
+      var f = ac.createBiquadFilter();
+      f.type = o.ftype || 'highpass';
+      f.frequency.setValueAtTime(o.f || 6000, t);
+      if (o.f2) f.frequency.exponentialRampToValueAtTime(o.f2, t + o.dur);
+      if (o.q) f.Q.value = o.q;
+      var g = ac.createGain();
+      g.gain.setValueAtTime(o.vol || 0.1, t);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + o.dur);
+      src.connect(f); f.connect(g);
+      g.connect(o.bus || sfxBus);
+      if (o.echo) {
+        var send = ac.createGain(); send.gain.value = o.echo;
+        g.connect(send); send.connect(delayIn);
+      }
+      src.start(t);
+      src.stop(t + o.dur + 0.05);
+    } catch (e) { audioErrors.push('noise: ' + e.message); }
+  }
+
+  var SFX = {
+    tap: function () {
+      voice({ f: 1720, dur: 0.045, vol: 0.045, atk: 0.004 });
+      noiseHit({ f: 5200, dur: 0.03, vol: 0.05 });
+    },
+    open: function () {
+      noiseHit({ f: 420, f2: 2400, dur: 0.2, vol: 0.05, ftype: 'bandpass', q: 1.2 });
+      voice({ f: 660, dur: 0.12, vol: 0.055, at: 0.06, echo: 0.25 });
+      voice({ f: 990, dur: 0.14, vol: 0.04, at: 0.13, echo: 0.25 });
+    },
+    close: function () {
+      noiseHit({ f: 2200, f2: 320, dur: 0.16, vol: 0.04, ftype: 'bandpass', q: 1.0 });
+      voice({ f: 520, dur: 0.09, vol: 0.04 });
+    },
+    miss: function () {
+      voice({ f: 347, f2: 330, dur: 0.13, vol: 0.085, type: 'triangle' });
+      voice({ f: 262, dur: 0.17, vol: 0.075, type: 'triangle', at: 0.1, echo: 0.15 });
+    },
+    hit: function () {
+      [523, 659, 784, 1047].forEach(function (f, i) {
+        voice({ f: f, dur: 0.22, vol: 0.09, at: i * 0.09, echo: 0.35 });
+      });
+      voice({ f: 2093, dur: 0.5, vol: 0.03, at: 0.36, echo: 0.5 });
+    },
+    lose: function () {
+      [392, 330, 262].forEach(function (f, i) {
+        voice({ f: f, dur: 0.3, vol: 0.08, type: 'triangle', at: i * 0.17, echo: 0.2 });
+      });
+    },
+    reveal: function () {
+      voice({ f: 987, dur: 0.7, vol: 0.07, atk: 0.006, echo: 0.45 });
+      voice({ f: 1480, dur: 0.6, vol: 0.025, at: 0.02, echo: 0.45 });
+      voice({ f: 1975, dur: 0.45, vol: 0.014, at: 0.04, echo: 0.45 });
+    }
+  };
+  function sfx(name) { if (!SETTINGS.sound) return; if (SFX[name]) SFX[name](); }
+
+  /* ---------------- 生成式背景音乐 ----------------
+   * 每首曲子是一份「编曲配置」（速度/和声进行/音阶/鼓型/音色），
+   * 音序器每小节实时演奏；旋律在调内随机行走，偏向和弦内音——
+   * 每遍听感略有不同，但始终和谐。零采样、零体积。
+   */
+  var TRACKS = [
+    {
+      id: 't1', name: '午后球场', bpm: 78, swing: 0.18, style: 'chill',
+      chords: [[48, 55, 60, 64], [45, 52, 57, 60], [41, 48, 53, 57], [43, 50, 55, 59]],
+      scale: [60, 62, 64, 67, 69, 72, 74, 76],
+      density: 0.42, pad: 'triangle', lead: 'triangle', bass: 'sine',
+      drums: { kick: [0, 8], hat: [2, 6, 10, 14], clap: [] }, masterLp: 2600
+    },
+    {
+      id: 't2', name: '冠军之路', bpm: 112, swing: 0, style: 'upbeat',
+      chords: [[50, 57, 62, 66], [54, 61, 66, 69], [52, 59, 64, 68], [47, 54, 59, 62]],
+      scale: [62, 64, 66, 69, 71, 74, 76, 78],
+      density: 0.68, pad: 'triangle', lead: 'square', bass: 'triangle',
+      drums: { kick: [0, 4, 8, 12], hat: [2, 6, 10, 14], clap: [4, 12] }, masterLp: 3800
+    },
+    {
+      id: 't3', name: '深夜复盘', bpm: 58, swing: 0, style: 'ambient',
+      chords: [[40, 47, 52, 55], [43, 50, 55, 59], [45, 52, 57, 60], [38, 45, 50, 54]],
+      scale: [52, 55, 57, 59, 62, 64, 67, 71],
+      density: 0.22, pad: 'sine', lead: 'sine', bass: 'sine',
+      drums: null, masterLp: 1800
+    },
+    {
+      id: 't4', name: '绿茵晨光', bpm: 96, swing: 0.24, style: 'bossa',
+      chords: [[46, 53, 58, 62, 65], [51, 58, 62, 65, 69], [44, 51, 56, 60, 63], [49, 56, 61, 64, 68]],
+      scale: [58, 60, 62, 65, 67, 70, 72, 74],
+      density: 0.5, pad: 'triangle', lead: 'triangle', bass: 'sine',
+      drums: { kick: [0, 10], hat: [2, 6, 10, 14], clap: [4, 12], rim: true }, masterLp: 3000
+    }
+  ];
+
+  var Music = (function () {
+    var timer = null, track = null, bar = 0, nextBar = 0, masterLp = null;
+    var info = { on: false, id: '', name: '' };
+
+    function barDur() { return 60 / track.bpm * 4; }
+
+    function scheduleBar(t) {
+      var ac = ctx();
+      if (!ac || !track) return;
+      var chord = track.chords[bar % track.chords.length];
+      var dur = barDur();
+      var s16 = dur / 16;
+
+      // 和弦垫
+      chord.forEach(function (m) {
+        voice({ f: mtof(m), dur: dur * 0.96, vol: 0.038, atk: dur * 0.25, type: track.pad, lp: track.masterLp, bus: musicBus, at: t - ac.currentTime, echo: 0.12 });
+      });
+      // 贝斯：1、3 拍根音（bossa 加反拍）
+      var bassHits = track.style === 'bossa' ? [0, 6, 10] : [0, 8];
+      bassHits.forEach(function (st) {
+        voice({ f: mtof(chord[0] - 24), dur: s16 * 5, vol: 0.11, type: track.bass, lp: 400, bus: musicBus, at: t - ac.currentTime + st * s16 });
+      });
+      // 鼓
+      if (track.drums) {
+        (track.drums.kick || []).forEach(function (st) {
+          voice({ f: 120, f2: 44, dur: 0.16, vol: 0.4, bus: musicBus, at: t - ac.currentTime + st * s16, glide: 0.1 });
+        });
+        (track.drums.hat || []).forEach(function (st, i) {
+          var sw = (st % 4 === 2 && track.swing) ? track.swing * s16 * 2 : 0;
+          noiseHit({ f: 7500, dur: 0.05, vol: i % 2 ? 0.028 : 0.05, bus: musicBus, at: t - ac.currentTime + st * s16 + sw });
+        });
+        (track.drums.clap || []).forEach(function (st) {
+          noiseHit({ f: 1600, dur: 0.09, vol: 0.05, ftype: 'bandpass', q: 1.4, bus: musicBus, at: t - ac.currentTime + st * s16, echo: 0.15 });
+        });
+      }
+      // 旋律：8 分网格上随机行走，偏向和弦音与级进
+      var last = Math.floor(track.scale.length / 2);
+      for (var e = 0; e < 8; e++) {
+        if (Math.random() > track.density) continue;
+        var step = Math.random() < 0.7 ? (Math.random() < 0.5 ? -1 : 1) : (Math.random() < 0.5 ? -2 : 2);
+        last = Math.max(0, Math.min(track.scale.length - 1, last + step));
+        var deg = track.scale[last];
+        if (chord.indexOf(deg % 12 + 12 * Math.floor(deg / 12)) !== -1) deg += 12; // 和弦音升八度点亮
+        var sw = (e % 2 === 1 && track.swing) ? track.swing * (dur / 8) : 0;
+        voice({
+          f: mtof(deg), dur: dur / 8 * (track.style === 'ambient' ? 3 : 1.4), vol: 0.075,
+          type: track.lead, lp: track.masterLp + 800, bus: musicBus,
+          at: t - ac.currentTime + e * dur / 8 + sw, echo: 0.3
+        });
+      }
+      bar++;
+    }
+
+    function loop() {
+      var ac = ctx();
+      if (!ac || !track) return;
+      while (nextBar < ac.currentTime + 0.25) {
+        scheduleBar(nextBar);
+        nextBar += barDur();
+      }
+    }
+
+    function applyVolume() {
+      if (musicBus) musicBus.gain.value = (SETTINGS.musicVol != null ? SETTINGS.musicVol : 0.5) * 0.5;
+    }
+
+    function start(id) {
+      var t = TRACKS.filter(function (x) { return x.id === id; })[0];
+      if (!t) return stop();
+      stop();
+      track = t;
+      info = { on: true, id: t.id, name: t.name };
+      var ac = ctx();
+      if (!ac) return;
+      if (ac.state === 'suspended') ac.resume();
+      applyVolume();
+      bar = 0;
+      nextBar = ac.currentTime + 0.08;
+      timer = setInterval(loop, 40);
+      loop();
+    }
+
+    function stop() {
+      if (timer) { clearInterval(timer); timer = null; }
+      track = null;
+      info = { on: false, id: '', name: '' };
+    }
+
+    return {
+      start: start, stop: stop, info: function () { return info; }, applyVolume: applyVolume,
+      list: function () { return TRACKS.map(function (t) { return { id: t.id, name: t.name }; }); }
+    };
+  })();
+
+  /** 浏览器自动播放策略：第一次任意手势时按记忆的曲目起播 */
+  function armAutoplay() {
+    function go() {
+      var ac = ctx();
+      if (ac && ac.state === 'suspended') ac.resume();
+      if (SETTINGS.musicTrack && SETTINGS.musicTrack !== 'off' && !Music.info().on) {
+        Music.start(SETTINGS.musicTrack);
+      }
+      document.removeEventListener('pointerdown', go);
+    }
+    document.addEventListener('pointerdown', go);
   }
 
   /* ---------------- DOM 小工具 ---------------- */
@@ -704,7 +957,7 @@
     S.game.clues = d.clues;
     S.game.used = d.used;
     S.game.remaining = d.remaining;
-    sfx('open');
+    sfx('reveal');
     renderReveal();
   }
 
@@ -885,6 +1138,80 @@
     box.appendChild(body);
   }
 
+  /* ---------------- 音乐浮控（所有视图可见） ---------------- */
+
+  var musicPop = null;
+
+  function musicChipSync(chip) {
+    var on = Music.info().on;
+    chip.classList.toggle('playing', on);
+    chip.setAttribute('title', on ? '背景音乐：' + Music.info().name + '（点开切换）' : '背景音乐（关）');
+  }
+
+  function buildMusicUI() {
+    var chip = el('button', { class: 'music-chip', text: '🎵', title: '背景音乐' });
+    chip.addEventListener('click', function (e) {
+      e.stopPropagation();
+      if (musicPop) { closeMusicPop(chip); return; }
+      sfx('tap');
+      if (!ctx()) { toast('当前浏览器不支持音频'); return; }
+      musicPop = el('div', { class: 'music-pop' });
+      musicPop.appendChild(el('div', { class: 'mp-title', text: '背景音乐' }));
+
+      var rows = [{ id: 'off', name: '关闭' }].concat(Music.list());
+      rows.forEach(function (t) {
+        var cur = SETTINGS.musicTrack || 'off';
+        var row = el('div', {
+          class: 'mp-row' + (cur === t.id ? ' on' : ''),
+          onClick: function () {
+            SETTINGS.musicTrack = t.id;
+            lsSet('gpweb_settings', JSON.stringify(SETTINGS));
+            if (t.id === 'off') Music.stop(); else Music.start(t.id);
+            refreshRows();
+            musicChipSync(chip);
+            sfx('tap');
+          }
+        },
+          el('span', { class: 'mp-dot', text: cur === t.id ? '●' : '○' }),
+          el('span', { text: t.name }));
+        row.dataset.tid = t.id;
+        musicPop.appendChild(row);
+      });
+
+      function refreshRows() {
+        var cur = SETTINGS.musicTrack || 'off';
+        musicPop.querySelectorAll('.mp-row').forEach(function (r) {
+          r.classList.toggle('on', r.dataset.tid === cur);
+          r.firstChild.textContent = r.dataset.tid === cur ? '●' : '○';
+        });
+      }
+
+      var vol = el('input', { class: 'mp-vol', type: 'range', min: '0', max: '1', step: '0.05', value: String(SETTINGS.musicVol != null ? SETTINGS.musicVol : 0.5) });
+      vol.addEventListener('input', function () {
+        SETTINGS.musicVol = Number(vol.value);
+        Music.applyVolume();
+        lsSet('gpweb_settings', JSON.stringify(SETTINGS));
+      });
+      var volRow = el('div', { class: 'mp-vol-row' }, el('span', { class: 'mute', text: '音量' }), vol);
+      musicPop.appendChild(volRow);
+
+      document.body.appendChild(musicPop);
+      musicChipSync(chip);
+      setTimeout(function () {
+        document.addEventListener('pointerdown', function outside(ev) {
+          if (musicPop && !musicPop.contains(ev.target)) closeMusicPop(chip);
+          else if (musicPop) document.addEventListener('pointerdown', outside, { once: true });
+        }, { once: true });
+      }, 0);
+    });
+    document.body.appendChild(chip);
+    return chip;
+  }
+
+  function closeMusicPop(chip) {
+    if (musicPop) { musicPop.remove(); musicPop = null; }
+  }
+
   /* ---------------- 启动 ---------------- */
 
   function init() {
@@ -899,6 +1226,9 @@
     $('mask').addEventListener('click', function (e) {
       if (e.target === $('mask')) { sfx('close'); closeSheet(); }
     });
+    var chip = buildMusicUI();
+    armAutoplay();
+    setTimeout(function () { musicChipSync(chip); }, 0);
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);

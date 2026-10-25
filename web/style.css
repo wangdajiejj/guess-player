@@ -271,6 +271,55 @@ body {
 }
 .home-foot a:hover { border-color: var(--main); }
 
+/* ---------------- 音乐浮控 ---------------- */
+
+.music-chip {
+  position: fixed;
+  right: 14px;
+  bottom: calc(112px + env(safe-area-inset-bottom));
+  z-index: 40;
+  width: 42px; height: 42px;
+  border-radius: 50%;
+  border: 1.5px solid var(--line);
+  background: var(--card);
+  color: var(--text);
+  font-size: 18px;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+  transition: transform .12s ease, border-color .2s ease;
+}
+.music-chip:active { transform: scale(0.92); }
+.music-chip.playing { border-color: var(--main); animation: muspulse 2.4s ease-in-out infinite; }
+@keyframes muspulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(18, 130, 79, 0); } 50% { box-shadow: 0 0 0 7px rgba(18, 130, 79, .12); } }
+
+.music-pop {
+  position: fixed;
+  right: 14px;
+  bottom: calc(162px + env(safe-area-inset-bottom));
+  z-index: 60;
+  width: 224px;
+  background: var(--card);
+  border-radius: 14px;
+  box-shadow: 0 10px 34px rgba(8, 24, 16, .28);
+  padding: 10px;
+  animation: viewin .18s ease-out;
+}
+.mp-title { font-size: 12px; color: var(--text-mute); margin: 2px 4px 6px; }
+.mp-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 13.5px;
+}
+.mp-row:hover { background: var(--field); }
+.mp-row.on { color: var(--main); font-weight: 600; background: var(--main-bg); }
+.mp-dot { font-size: 10px; opacity: .7; }
+.mp-vol-row { display: flex; align-items: center; gap: 8px; padding: 6px 6px 2px; }
+.mp-vol { flex: 1; accent-color: var(--main); }
+
 /* ---------------- 彩带庆祝（猜中时 canvas 绘制，无素材） ---------------- */
 
 #confetti {
