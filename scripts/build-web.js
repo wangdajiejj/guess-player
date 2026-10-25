@@ -116,8 +116,15 @@ ${css}
 <div id="app">
   <div class="view on" id="view-home">
     <div class="hero">
+      <div class="hero-ball">⚽</div>
       <div class="hero-title">猜球员</div>
-      <div class="hero-sub sub">足球版 Wordle · 8 次机会 · 548 人题库</div>
+      <div class="hero-sub sub">足球版 Wordle</div>
+      <div class="hero-tags">
+        <span class="hero-tag">548 人题库</span>
+        <span class="hero-tag">8 次机会</span>
+        <span class="hero-tag">12 个专题</span>
+        <span class="hero-tag">免安装 · 离线可玩</span>
+      </div>
     </div>
     <div id="home-body"></div>
   </div>

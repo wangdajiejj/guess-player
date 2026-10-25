@@ -155,11 +155,11 @@
     box.appendChild(strip);
 
     box.appendChild(modeCard('📅', '每日一题', '一天一位神秘球员，答案人人不同',
-      function () { startGame('daily'); }));
+      function () { startGame('daily'); }, 't1'));
 
     box.appendChild(el('div', { class: 'mode-title', text: '自由练习' }));
     var c1 = el('div', { class: 'card' }, el('div', { class: 'mode-card' },
-      el('div', { class: 'mode-icon', text: '⚽' }),
+      el('div', { class: 'mode-icon t2', text: '⚽' }),
       el('div', { class: 'mode-body' },
         el('div', { class: 'mode-name', text: '按难度开局' }),
         el('div', { class: 'mode-desc', text: '猜满 8 条线索，随便玩' }))));
@@ -174,7 +174,7 @@
 
     box.appendChild(el('div', { class: 'mode-title', text: '反向猜球' }));
     var c2 = el('div', { class: 'card' }, el('div', { class: 'mode-card' },
-      el('div', { class: 'mode-icon', text: '🔍' }),
+      el('div', { class: 'mode-icon t3', text: '🔍' }),
       el('div', { class: 'mode-body' },
         el('div', { class: 'mode-name', text: '先看线索，再猜是谁' }),
         el('div', { class: 'mode-desc', text: '系统逐条揭晓答案属性，揭得越少分越高' }))));
@@ -200,7 +200,7 @@
     c3.appendChild(grid);
     box.appendChild(c3);
 
-    box.appendChild(modeCard('📖', '规则说明', '三色线索怎么读、怎么筛候选', function () { show('help'); }));
+    box.appendChild(modeCard('📖', '规则说明', '三色线索怎么读、怎么筛候选', function () { show('help'); }, 't4'));
 
     var foot = el('div', { class: 'home-foot' });
     foot.appendChild(el('span', { text: '题库 ' + S.players.length + ' 人 · 数据校准 2026-10-25 · ' }));
@@ -230,9 +230,9 @@
     return true;
   }
 
-  function modeCard(icon, name, desc, onClick) {
+  function modeCard(icon, name, desc, onClick, tone) {
     return el('div', { class: 'card' }, el('div', { class: 'mode-card', onClick: onClick },
-      el('div', { class: 'mode-icon', text: icon }),
+      el('div', { class: 'mode-icon ' + (tone || 't1'), text: icon }),
       el('div', { class: 'mode-body' },
         el('div', { class: 'mode-name', text: name }),
         el('div', { class: 'mode-desc', text: desc })),
@@ -319,7 +319,9 @@
         el('div', { class: 'sub', text: '从下方搜一名球员，看看你和答案差在哪' })));
     }
 
-    g.rows.forEach(function (row) { rows.appendChild(clueCardOf(row)); });
+    g.rows.forEach(function (row) {
+      rows.appendChild(clueCardOf(row, row.round === g.rows[g.rows.length - 1].round));
+    });
 
     if (g.status !== 'playing' && g.rows.length) {
       rows.appendChild(el('div', { class: 'finish-tip',
@@ -337,9 +339,9 @@
     }
   }
 
-  function clueCardOf(row) {
+  function clueCardOf(row, isNew) {
     var p = row.player || {};
-    var card = el('div', { class: 'clue-card' });
+    var card = el('div', { class: 'clue-card' + (isNew ? ' new' : '') });
 
     var head = el('div', { class: 'cc-head' },
       el('div', { class: 'cc-round', text: '第 ' + row.round + ' 猜' }),
@@ -706,6 +708,46 @@
     renderReveal();
   }
 
+  /* ---------------- 彩带庆祝（canvas 现画，无素材文件） ---------------- */
+
+  function confetti() {
+    var cvs = document.createElement('canvas');
+    if (!cvs.getContext) return;   // 异常环境直接放弃，不影响结果页
+    cvs.id = 'confetti';
+    document.body.appendChild(cvs);
+    var ctx = cvs.getContext('2d');
+    var W = cvs.width = window.innerWidth;
+    var H = cvs.height = window.innerHeight;
+    var COLORS = ['#6aaa64', '#d9a62e', '#e8c14d', '#3a9d6d', '#ffffff', '#c9b458'];
+    var parts = [];
+    for (var i = 0; i < 90; i++) {
+      parts.push({
+        x: Math.random() * W, y: -20 - Math.random() * H * 0.4,
+        w: 6 + Math.random() * 6, h: 8 + Math.random() * 8,
+        c: COLORS[i % COLORS.length],
+        vy: 2.2 + Math.random() * 2.6, vx: -1.2 + Math.random() * 2.4,
+        rot: Math.random() * Math.PI, vr: -0.12 + Math.random() * 0.24
+      });
+    }
+    var t0 = Date.now();
+    (function frame() {
+      ctx.clearRect(0, 0, W, H);
+      var el0 = Date.now() - t0;
+      parts.forEach(function (q) {
+        q.x += q.vx; q.y += q.vy; q.rot += q.vr; q.vy += 0.015;
+        ctx.save();
+        ctx.translate(q.x, q.y);
+        ctx.rotate(q.rot);
+        ctx.globalAlpha = Math.max(0, 1 - el0 / 2600);
+        ctx.fillStyle = q.c;
+        ctx.fillRect(-q.w / 2, -q.h / 2, q.w, q.h);
+        ctx.restore();
+      });
+      if (el0 < 2800) requestAnimationFrame(frame);
+      else cvs.remove();
+    })();
+  }
+
   /* ---------------- 结果页 ---------------- */
 
   function openResult(gameId) {
@@ -799,6 +841,7 @@
     box.appendChild(acts);
 
     show('result');
+    if (d.status === 'won') confetti();
   }
 
   /* ---------------- 帮助页 ---------------- */

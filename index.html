@@ -81,7 +81,8 @@ body {
 }
 
 .view { display: none; flex: 1; flex-direction: column; }
-.view.on { display: flex; }
+.view.on { display: flex; animation: viewin .26s ease-out; }
+@keyframes viewin { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
 
 /* ---------------- 通用 ---------------- */
 
@@ -107,8 +108,16 @@ body {
 .btn:active { transform: scale(0.98); }
 .btn:disabled { opacity: .45; cursor: default; }
 
-.btn-primary { background: var(--main); color: #fff; }
-.btn-gold { background: var(--gold); color: #221a04; }
+.btn-primary {
+  background: linear-gradient(135deg, #148a53, var(--main));
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(12, 92, 59, .28);
+}
+.btn-gold {
+  background: linear-gradient(135deg, #ecc95e, var(--gold));
+  color: #221a04;
+  box-shadow: 0 4px 14px rgba(217, 166, 46, .3);
+}
 .btn-ghost {
   background: transparent;
   color: var(--main);
@@ -121,19 +130,59 @@ body {
 /* ---------------- 首页 ---------------- */
 
 .hero {
-  margin: 18px 14px 6px;
+  position: relative;
+  margin: 22px 14px 6px;
   text-align: center;
+  overflow: hidden;
+  padding: 10px 0 6px;
 }
+/* 两团低饱和光斑撑起氛围，深浅两套变量下都成立 */
+.hero::before, .hero::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(46px);
+  opacity: .5;
+  pointer-events: none;
+}
+.hero::before {
+  width: 190px; height: 190px;
+  right: -50px; top: -70px;
+  background: radial-gradient(circle, rgba(18, 130, 79, .35), transparent 70%);
+}
+.hero::after {
+  width: 160px; height: 160px;
+  left: -46px; bottom: -80px;
+  background: radial-gradient(circle, rgba(217, 166, 46, .28), transparent 70%);
+}
+.hero-ball {
+  font-size: 38px;
+  line-height: 1;
+  animation: ballspin 9s linear infinite;
+  display: inline-block;
+  filter: drop-shadow(0 4px 8px rgba(12, 92, 59, .25));
+}
+@keyframes ballspin { from { transform: rotate(0); } to { transform: rotate(360deg); } }
 .hero-title {
-  font-size: 26px;
+  font-size: 27px;
   font-weight: 800;
-  letter-spacing: 2px;
-  background: linear-gradient(135deg, var(--main), var(--gold));
+  letter-spacing: 3px;
+  background: linear-gradient(135deg, var(--main) 30%, var(--gold));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
+  margin-top: 2px;
 }
-.hero-sub { margin-top: 4px; }
+.hero-sub { margin-top: 5px; }
+.hero-tags { margin-top: 10px; display: flex; justify-content: center; gap: 6px; flex-wrap: wrap; }
+.hero-tag {
+  font-size: 11px;
+  color: var(--text-sub);
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 3px 10px;
+}
 
 .stats-strip {
   display: flex;
@@ -145,7 +194,15 @@ body {
   box-shadow: var(--shadow);
 }
 .stat { text-align: center; min-width: 64px; }
-.stat-num { font-size: 20px; font-weight: 700; color: var(--main); }
+.stat + .stat { border-left: 1px solid var(--line); }
+.stat-num {
+  font-size: 20px;
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--main), #3a9d6d);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
 .stat-label { font-size: 12px; color: var(--text-mute); }
 
 .mode-title { margin: 18px 20px 2px; font-size: 15px; font-weight: 600; }
@@ -157,14 +214,23 @@ body {
   cursor: pointer;
 }
 .mode-card:active { transform: scale(0.99); }
+/* 首页可点卡片：hover 微浮起，按下回弹 */
+#home-body .card { transition: transform .16s ease, box-shadow .16s ease; cursor: pointer; }
+#home-body .card:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(20, 40, 30, .12); }
+
 .mode-icon {
   width: 46px; height: 46px;
   border-radius: 14px;
-  background: var(--main-bg);
   display: flex; align-items: center; justify-content: center;
   font-size: 24px;
   flex: none;
+  transition: transform .16s ease;
 }
+#home-body .card:hover .mode-icon { transform: scale(1.08) rotate(-4deg); }
+.mode-icon.t1 { background: linear-gradient(135deg, #e3efe8, #cde5d6); }
+.mode-icon.t2 { background: linear-gradient(135deg, #fdf3dc, #f7e3b0); }
+.mode-icon.t3 { background: linear-gradient(135deg, #e5ecf6, #ccddf2); }
+.mode-icon.t4 { background: linear-gradient(135deg, #f6e5e0, #efd0c6); }
 .mode-body { flex: 1; min-width: 0; }
 .mode-name { font-size: 16px; font-weight: 600; }
 .mode-desc { font-size: 12.5px; color: var(--text-mute); margin-top: 1px; }
@@ -206,7 +272,24 @@ body {
   font-size: 12px;
   color: var(--text-mute);
 }
-.home-foot a { color: var(--main); text-decoration: none; }
+.home-foot a {
+  color: var(--main);
+  text-decoration: none;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 2px 10px;
+  background: var(--card);
+}
+.home-foot a:hover { border-color: var(--main); }
+
+/* ---------------- 彩带庆祝（猜中时 canvas 绘制，无素材） ---------------- */
+
+#confetti {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 200;
+}
 
 /* ---------------- 游戏页顶栏 ---------------- */
 
@@ -264,9 +347,10 @@ body {
   box-shadow: var(--shadow);
   margin: 10px 14px;
   padding: 12px 14px;
-  animation: slidein .28s ease-out;
 }
-@keyframes slidein { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+/* 只有最新一张卡滑入：重渲染时不整屏重播动画 */
+.clue-card.new { animation: slidein .3s ease-out; }
+@keyframes slidein { from { opacity: 0; transform: translateY(16px) scale(.985); } to { opacity: 1; transform: none; } }
 
 .cc-head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
 .cc-round {
@@ -289,9 +373,21 @@ body {
   font-size: 12.5px;
   cursor: pointer;
   color: #fff;
-  transition: transform .06s ease;
+  transition: transform .06s ease, filter .12s ease;
 }
+.vchip:hover { filter: brightness(1.07); }
 .vchip:active { transform: scale(0.94); }
+/* 新卡的标签逐个弹出（老卡不重播） */
+.clue-card.new .vchip { animation: chipin .26s ease-out both; }
+.clue-card.new .vchip:nth-child(1) { animation-delay: .04s; }
+.clue-card.new .vchip:nth-child(2) { animation-delay: .08s; }
+.clue-card.new .vchip:nth-child(3) { animation-delay: .12s; }
+.clue-card.new .vchip:nth-child(4) { animation-delay: .16s; }
+.clue-card.new .vchip:nth-child(5) { animation-delay: .20s; }
+.clue-card.new .vchip:nth-child(6) { animation-delay: .24s; }
+.clue-card.new .vchip:nth-child(7) { animation-delay: .28s; }
+.clue-card.new .vchip:nth-child(8) { animation-delay: .32s; }
+@keyframes chipin { from { opacity: 0; transform: scale(.7); } to { opacity: 1; transform: scale(1); } }
 .vchip .lab { font-size: 11px; opacity: .8; margin-right: 5px; }
 .vchip.green { background: var(--green); }
 .vchip.amber { background: var(--amber); }
@@ -301,7 +397,8 @@ body {
 .finish-tip { text-align: center; margin: 14px 0 4px; font-size: 14px; color: var(--text-sub); }
 
 .empty-state { text-align: center; margin: 44px 30px; }
-.empty-state .big { font-size: 42px; }
+.empty-state .big { font-size: 42px; display: inline-block; animation: floaty 2.6s ease-in-out infinite; }
+@keyframes floaty { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
 .empty-state .t1 { margin-top: 8px; font-size: 16px; font-weight: 600; }
 
 /* ---------------- 底部搜索 ---------------- */
@@ -323,16 +420,21 @@ body {
 .search-box { position: relative; }
 .search-input {
   width: 100%;
-  border: none;
+  border: 2px solid transparent;
   border-radius: 12px;
-  padding: 13px 16px;
+  padding: 12px 16px;
   font-size: 15px;
   background: var(--card);
   color: var(--text);
   box-shadow: var(--shadow);
   outline: none;
+  transition: border-color .15s ease, box-shadow .15s ease;
 }
 .search-input::placeholder { color: var(--text-mute); }
+.search-input:focus {
+  border-color: var(--main);
+  box-shadow: 0 0 0 4px rgba(18, 130, 79, .14), var(--shadow);
+}
 
 .search-drop {
   position: absolute;
@@ -405,6 +507,8 @@ body {
 .mask {
   position: fixed; inset: 0;
   background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
   z-index: 50;
   display: none;
   align-items: flex-end;
@@ -422,7 +526,18 @@ body {
   flex-direction: column;
   padding-bottom: env(safe-area-inset-bottom);
   animation: sheetup .22s ease-out;
+  box-shadow: 0 -8px 40px rgba(8, 24, 16, .28);
 }
+.sheet::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 14%; right: 14%;
+  height: 2px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, transparent, var(--main), transparent);
+  opacity: .55;
+}
+.sheet { position: relative; }
 @keyframes sheetup { from { transform: translateY(40px); opacity: .6; } to { transform: none; opacity: 1; } }
 
 .sheet-handle { width: 40px; height: 4px; border-radius: 2px; background: var(--holder); margin: 10px auto 2px; }
@@ -539,8 +654,8 @@ body {
 
 /* ---------------- 结果页 ---------------- */
 
-.res-banner { text-align: center; margin: 20px 14px 0; }
-.res-banner .emoji { font-size: 44px; }
+.res-banner { text-align: center; margin: 20px 14px 0; animation: viewin .35s ease-out; }
+.res-banner .emoji { font-size: 44px; animation: floaty 2.6s ease-in-out infinite; }
 .res-banner h2 { font-size: 22px; margin-top: 4px; }
 .res-banner .score {
   display: inline-block;
@@ -552,7 +667,7 @@ body {
   color: var(--gold);
   font-weight: 700;
 }
-.res-banner.won { background: linear-gradient(135deg, #2f7d4f, #0c5c3b); border-radius: 16px; padding: 18px 0 16px; color: #fff; }
+.res-banner.won { background: linear-gradient(135deg, #2f7d4f, #0c5c3b); border-radius: 16px; padding: 18px 0 16px; color: #fff; box-shadow: 0 6px 22px rgba(18, 92, 59, .3); }
 .res-banner.lost { background: linear-gradient(135deg, #5a6b5f, #33403a); border-radius: 16px; padding: 18px 0 16px; color: #fff; }
 .res-banner.won .score, .res-banner.lost .score { background: rgba(255,255,255,.16); color: #ffe9b3; }
 
@@ -630,8 +745,15 @@ body {
 <div id="app">
   <div class="view on" id="view-home">
     <div class="hero">
+      <div class="hero-ball">⚽</div>
       <div class="hero-title">猜球员</div>
-      <div class="hero-sub sub">足球版 Wordle · 8 次机会 · 548 人题库</div>
+      <div class="hero-sub sub">足球版 Wordle</div>
+      <div class="hero-tags">
+        <span class="hero-tag">548 人题库</span>
+        <span class="hero-tag">8 次机会</span>
+        <span class="hero-tag">12 个专题</span>
+        <span class="hero-tag">免安装 · 离线可玩</span>
+      </div>
     </div>
     <div id="home-body"></div>
   </div>
@@ -2540,11 +2662,11 @@ window.GP = {
     box.appendChild(strip);
 
     box.appendChild(modeCard('📅', '每日一题', '一天一位神秘球员，答案人人不同',
-      function () { startGame('daily'); }));
+      function () { startGame('daily'); }, 't1'));
 
     box.appendChild(el('div', { class: 'mode-title', text: '自由练习' }));
     var c1 = el('div', { class: 'card' }, el('div', { class: 'mode-card' },
-      el('div', { class: 'mode-icon', text: '⚽' }),
+      el('div', { class: 'mode-icon t2', text: '⚽' }),
       el('div', { class: 'mode-body' },
         el('div', { class: 'mode-name', text: '按难度开局' }),
         el('div', { class: 'mode-desc', text: '猜满 8 条线索，随便玩' }))));
@@ -2559,7 +2681,7 @@ window.GP = {
 
     box.appendChild(el('div', { class: 'mode-title', text: '反向猜球' }));
     var c2 = el('div', { class: 'card' }, el('div', { class: 'mode-card' },
-      el('div', { class: 'mode-icon', text: '🔍' }),
+      el('div', { class: 'mode-icon t3', text: '🔍' }),
       el('div', { class: 'mode-body' },
         el('div', { class: 'mode-name', text: '先看线索，再猜是谁' }),
         el('div', { class: 'mode-desc', text: '系统逐条揭晓答案属性，揭得越少分越高' }))));
@@ -2585,7 +2707,7 @@ window.GP = {
     c3.appendChild(grid);
     box.appendChild(c3);
 
-    box.appendChild(modeCard('📖', '规则说明', '三色线索怎么读、怎么筛候选', function () { show('help'); }));
+    box.appendChild(modeCard('📖', '规则说明', '三色线索怎么读、怎么筛候选', function () { show('help'); }, 't4'));
 
     var foot = el('div', { class: 'home-foot' });
     foot.appendChild(el('span', { text: '题库 ' + S.players.length + ' 人 · 数据校准 2026-10-25 · ' }));
@@ -2615,9 +2737,9 @@ window.GP = {
     return true;
   }
 
-  function modeCard(icon, name, desc, onClick) {
+  function modeCard(icon, name, desc, onClick, tone) {
     return el('div', { class: 'card' }, el('div', { class: 'mode-card', onClick: onClick },
-      el('div', { class: 'mode-icon', text: icon }),
+      el('div', { class: 'mode-icon ' + (tone || 't1'), text: icon }),
       el('div', { class: 'mode-body' },
         el('div', { class: 'mode-name', text: name }),
         el('div', { class: 'mode-desc', text: desc })),
@@ -2704,7 +2826,9 @@ window.GP = {
         el('div', { class: 'sub', text: '从下方搜一名球员，看看你和答案差在哪' })));
     }
 
-    g.rows.forEach(function (row) { rows.appendChild(clueCardOf(row)); });
+    g.rows.forEach(function (row) {
+      rows.appendChild(clueCardOf(row, row.round === g.rows[g.rows.length - 1].round));
+    });
 
     if (g.status !== 'playing' && g.rows.length) {
       rows.appendChild(el('div', { class: 'finish-tip',
@@ -2722,9 +2846,9 @@ window.GP = {
     }
   }
 
-  function clueCardOf(row) {
+  function clueCardOf(row, isNew) {
     var p = row.player || {};
-    var card = el('div', { class: 'clue-card' });
+    var card = el('div', { class: 'clue-card' + (isNew ? ' new' : '') });
 
     var head = el('div', { class: 'cc-head' },
       el('div', { class: 'cc-round', text: '第 ' + row.round + ' 猜' }),
@@ -3091,6 +3215,46 @@ window.GP = {
     renderReveal();
   }
 
+  /* ---------------- 彩带庆祝（canvas 现画，无素材文件） ---------------- */
+
+  function confetti() {
+    var cvs = document.createElement('canvas');
+    if (!cvs.getContext) return;   // 异常环境直接放弃，不影响结果页
+    cvs.id = 'confetti';
+    document.body.appendChild(cvs);
+    var ctx = cvs.getContext('2d');
+    var W = cvs.width = window.innerWidth;
+    var H = cvs.height = window.innerHeight;
+    var COLORS = ['#6aaa64', '#d9a62e', '#e8c14d', '#3a9d6d', '#ffffff', '#c9b458'];
+    var parts = [];
+    for (var i = 0; i < 90; i++) {
+      parts.push({
+        x: Math.random() * W, y: -20 - Math.random() * H * 0.4,
+        w: 6 + Math.random() * 6, h: 8 + Math.random() * 8,
+        c: COLORS[i % COLORS.length],
+        vy: 2.2 + Math.random() * 2.6, vx: -1.2 + Math.random() * 2.4,
+        rot: Math.random() * Math.PI, vr: -0.12 + Math.random() * 0.24
+      });
+    }
+    var t0 = Date.now();
+    (function frame() {
+      ctx.clearRect(0, 0, W, H);
+      var el0 = Date.now() - t0;
+      parts.forEach(function (q) {
+        q.x += q.vx; q.y += q.vy; q.rot += q.vr; q.vy += 0.015;
+        ctx.save();
+        ctx.translate(q.x, q.y);
+        ctx.rotate(q.rot);
+        ctx.globalAlpha = Math.max(0, 1 - el0 / 2600);
+        ctx.fillStyle = q.c;
+        ctx.fillRect(-q.w / 2, -q.h / 2, q.w, q.h);
+        ctx.restore();
+      });
+      if (el0 < 2800) requestAnimationFrame(frame);
+      else cvs.remove();
+    })();
+  }
+
   /* ---------------- 结果页 ---------------- */
 
   function openResult(gameId) {
@@ -3184,6 +3348,7 @@ window.GP = {
     box.appendChild(acts);
 
     show('result');
+    if (d.status === 'won') confetti();
   }
 
   /* ---------------- 帮助页 ---------------- */
