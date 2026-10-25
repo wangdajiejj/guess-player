@@ -157,6 +157,8 @@
 
 .mode-desc { font-size: 25rpx; line-height: 1.7; }
 
+.mode-diff { margin-top: 8rpx; }
+
 /* ---------------- 隐私 ---------------- */
 
 .pv-item {

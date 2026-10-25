@@ -1,26 +1,26 @@
 <view class="game">
-  <!-- 顶部状态栏 -->
+  <!-- 顶部状态栏：深绿渐变，与导航栏连成一体 -->
   <view class="topbar">
     <view class="tb-left">
       <view class="tb-title">{{titleText}}</view>
-      <view class="tb-sub gp-sub" wx:if="{{dateKey && mode === 'daily'}}">{{dateKey}}</view>
+      <view class="tb-sub" wx:if="{{dateKey && mode === 'daily'}}">{{dateKey}}</view>
     </view>
     <view class="tb-right">
-      <view class="tb-remain">
-        <text class="tb-num">{{remaining}}</text>
+      <view class="tb-remain {{remaining <= 2 && status === 'playing' ? 'tb-danger' : ''}}">
+        <text class="tb-num {{remaining <= 2 && status === 'playing' ? 'tb-num-danger' : ''}}">{{remaining}}</text>
         <text class="tb-slash">/{{maxGuesses}}</text>
       </view>
-      <view class="tb-label gp-sub">剩余机会</view>
+      <view class="tb-label">剩余机会</view>
     </view>
   </view>
 
-  <!-- 进度点 -->
+  <!-- 机会轨道：走过的变实心足球，当前的带呼吸光圈 -->
   <view class="dots">
     <view
       wx:for="{{maxGuesses}}"
       wx:key="*this"
-      class="dot {{index < used ? 'dot-used' : 'dot-left'}}"
-    ></view>
+      class="dot {{index < used ? 'dot-used' : (index === used && status === 'playing' ? 'dot-cur' : 'dot-left')}}"
+    >{{index < used ? '✓' : ''}}</view>
   </view>
 
   <!-- 线索区 -->
@@ -33,16 +33,33 @@
     scroll-with-animation
   >
     <block wx:if="{{status === 'loading'}}">
-      <view class="gp-state">
-        <view class="spinner"></view>
-        <text class="gp-sub">正在准备题目…</text>
+      <!-- 开局骨架：模拟两张线索卡（头像 + 名字条 + 8 个标签条） -->
+      <view class="sk-card {{index === 0 ? 'sk-a' : 'sk-b'}}" wx:for="{{[0, 1]}}" wx:key="*this">
+        <view class="sk-head">
+          <view class="sk sk-avatar"></view>
+          <view class="sk-lines">
+            <view class="sk sk-bar sk-w44"></view>
+            <view class="sk sk-bar sk-w28"></view>
+          </view>
+        </view>
+        <view class="sk-chips">
+          <view class="sk sk-chip sk-c1"></view>
+          <view class="sk sk-chip sk-c2"></view>
+          <view class="sk sk-chip sk-c3"></view>
+          <view class="sk sk-chip sk-c4"></view>
+          <view class="sk sk-chip sk-c5"></view>
+          <view class="sk sk-chip sk-c6"></view>
+          <view class="sk sk-chip sk-c7"></view>
+          <view class="sk sk-chip sk-c8"></view>
+        </view>
       </view>
+      <view class="sk-note gp-sub">正在准备题目…</view>
     </block>
 
     <block wx:elif="{{status === 'error'}}">
       <view class="gp-state">
         <text class="gp-sub">{{errMsg}}</text>
-        <button class="gp-btn gp-btn-ghost btn-retry" bindtap="retry">重试</button>
+        <button class="gp-btn gp-btn-ghost btn-retry" hover-class="btn-press" bindtap="retry">重试</button>
       </view>
     </block>
 
@@ -55,7 +72,7 @@
 
       <view wx:if="{{rows.length === 0}}" class="gp-state">
         <view class="empty-icon">⚽</view>
-        <text class="empty-title">还没开始</text>
+        <text class="empty-title">第一位球员，由你来定</text>
         <text class="gp-sub">从下方选一名球员，看看你和答案差在哪儿</text>
       </view>
 
@@ -70,7 +87,7 @@
       />
 
       <view wx:if="{{status !== 'playing' && rows.length}}" class="finish-tip">
-        <text wx:if="{{status === 'won'}}">猜中了！正在进入结果页…</text>
+        <text wx:if="{{status === 'won'}}">🎉 猜中了！正在进入结果页…</text>
         <text wx:else>机会用完了，正在揭晓答案…</text>
       </view>
     </block>
@@ -81,7 +98,8 @@
   <!-- 底部操作 -->
   <view class="bottom">
     <button
-      class="gp-btn gp-btn-primary {{status !== 'playing' || submitting ? 'gp-btn-disabled' : ''}}"
+      class="gp-btn gp-btn-primary btn-cta {{status !== 'playing' || submitting ? 'gp-btn-disabled' : ''}}"
+      hover-class="{{status === 'playing' && !submitting ? 'btn-press' : 'none'}}"
       bindtap="openSheet"
       disabled="{{status !== 'playing' || submitting}}"
     >
@@ -92,7 +110,7 @@
       <text wx:else>机会用完</text>
     </button>
 
-    <button class="gp-btn gp-btn-ghost btn-help" bindtap="goHelp">规则说明</button>
+    <button class="gp-btn gp-btn-ghost btn-help" hover-class="btn-press" bindtap="goHelp">规则说明</button>
   </view>
 
   <!-- 搜索候选面板 -->

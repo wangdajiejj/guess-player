@@ -27,7 +27,9 @@ const KEY = 'gp_mock_games';
 const SALT = 'GP2026v1_DEFAULT';
 const OPENID = 'mock_openid';
 // 改这个版本号 = 强制客户端下一次进入时重新拉取候选池
-const VERSION = 'mock-2026-10-11';
+const VERSION = 'mock-2026-10-25';
+// 难度分档（与 _shared/constants.js 同口径）：star=5 / normal=4 / all=走 MIN_FAME
+const DIFF = { star: C.MIN_FAME_STAR, normal: C.MIN_FAME_NORMAL };
 
 function loadTable() {
   try {
@@ -76,10 +78,15 @@ function getPlayerById(id) {
 }
 
 /** 答案池：和 util.loadAnswerPool 一个口径 —— 按 id 升序决定了抽样的稳定性 */
-function loadAnswerPool(mode) {
-  const minFame = mode === 'daily' ? C.MIN_FAME_DAILY : C.MIN_FAME;
-  return PLAYERS
-    .filter(p => p.fame_level >= minFame)
+function loadAnswerPool(mode, difficulty, theme) {
+  let minFame = mode === 'daily' ? C.MIN_FAME_DAILY : C.MIN_FAME;
+  if (mode !== 'daily' && DIFF[difficulty]) minFame = DIFF[difficulty];
+  // 带专题时忽略难度档：全员池再切主题（与服务端同规则）
+  const themed = mode !== 'daily' && theme && C.THEMES[theme];
+  if (themed) minFame = C.MIN_FAME;
+  let list = PLAYERS.filter(p => p.fame_level >= minFame);
+  if (themed) list = list.filter(p => U.themeFilter(p, C.THEMES[theme]));
+  return list
     .sort((a, b) => a.id - b.id)
     .slice(0, C.MAX_POOL_SIZE);
 }
@@ -119,15 +126,22 @@ function getPlayers(version) {
 }
 
 /** gameStart —— 对齐 cloudfunctions/gameStart/index.js */
-function gameStart(mode) {
-  mode = mode === 'endless' ? 'endless' : 'daily';
+function gameStart(mode, difficulty, theme) {
+  mode = ['endless', 'reveal'].indexOf(mode) !== -1 ? mode : 'daily';
+  if (mode === 'daily') difficulty = '';
+  else if (difficulty !== 'star' && difficulty !== 'normal') difficulty = '';
+  if (theme) {
+    if (mode === 'daily' || !C.THEMES[theme]) return U.fail(C.CODE.INVALID_PARAM, '未知的专题');
+  } else {
+    theme = '';
+  }
   const dateKey = U.beijingDateKey();
 
   try {
     let game = mode === 'daily' ? findToday(dateKey) : null;
 
     if (!game) {
-      const pool = loadAnswerPool(mode);
+      const pool = loadAnswerPool(mode, difficulty, theme);
       if (!pool.length) return U.fail(C.CODE.POOL_EMPTY);
 
       const answer = mode === 'daily'
@@ -139,17 +153,33 @@ function gameStart(mode) {
         gameId: U.genGameId(dateKey),
         _openid: OPENID,
         mode,
+        difficulty,
+        theme,
         dateKey,
-        uniqueKey: mode === 'daily' ? `${OPENID}|daily|${dateKey}` : `endless|${U.genGameId(dateKey)}`,
+        uniqueKey: mode === 'daily'
+          ? `${OPENID}|daily|${dateKey}`
+          : `${mode}|${U.genGameId(dateKey)}`,
         answerId: answer.id,
         maxGuesses: C.MAX_GUESSES,
         guessIds: [],
+        revealed: mode === 'reveal' ? 1 : 0,
         status: 'playing',
         startedAt: Date.now(),
         finishedAt: 0,
         score: 0
       };
       upsert(game);
+    }
+
+    // 反向猜球：带上已揭线索
+    if (game.mode === 'reveal') {
+      const ans = getPlayerById(game.answerId);
+      if (!ans) return U.fail(C.CODE.INTERNAL, '答案数据异常');
+      return U.ok(U.publicGame(game, [], {
+        revealed: game.revealed || 1,
+        clues: U.revealCluesOf(ans, game.revealed || 1, game.dateKey),
+        maxScore: U.revealMaxScore(game.revealed || 1, game.maxGuesses)
+      }));
     }
 
     return U.ok(U.publicGame(game, rowsFor(game, dateKey)));
@@ -180,33 +210,46 @@ function gameGuess(gameId, playerId) {
     if (!answer) return U.fail(C.CODE.INTERNAL, '答案数据异常');
 
     const dateKey = game.dateKey || U.beijingDateKey();
-    const verdict = compare(guess, answer, dateKey);
-    const hit = isHit(guess, answer);
+    const hit = guess.id === answer.id;
 
     const nextGuessIds = guessIds.concat([playerId]);
     const used = nextGuessIds.length;
     const max = game.maxGuesses || C.MAX_GUESSES;
     const status = hit ? 'won' : (used >= max ? 'lost' : 'playing');
 
+    // 反向猜球：分数看揭了几条线索，且不下发 verdict（见云函数同名注释）
+    const isReveal = game.mode === 'reveal';
+    const revealed = isReveal ? (game.revealed || 1) : used;
+
     const patch = {
       guessIds: nextGuessIds,
       status,
       finishedAt: status === 'playing' ? 0 : Date.now(),
-      score: hit ? Math.max(0, (max + 1 - used) * 100) : 0
+      score: hit ? (isReveal
+        ? Math.max(0, (max + 1 - revealed) * 100)
+        : Math.max(0, (max + 1 - used) * 100)) : 0
     };
 
     upsert(Object.assign({}, game, patch));
 
-    return U.ok({
+    const res = {
       round: used,
       guessedId: playerId,
       hit,
       status,
       used,
       remaining: Math.max(0, max - used),
-      score: patch.score,
-      verdict
-    });
+      score: patch.score
+    };
+    if (isReveal) {
+      res.verdict = null;
+      res.player = U.pickFields(guess, C.CLIENT_FIELDS);
+      res.revealed = revealed;
+      res.maxScore = U.revealMaxScore(revealed, max);
+    } else {
+      res.verdict = compare(guess, answer, dateKey);
+    }
+    return U.ok(res);
   } catch (e) {
     console.error('[mock gameGuess]', e);
     return U.fail(C.CODE.INTERNAL, e.message);
@@ -222,9 +265,61 @@ function gameResume(gameId) {
     const game = findGame(gameId);
     if (!game) return U.fail(C.CODE.GAME_NOT_FOUND);
     if (game._openid !== OPENID) return U.fail(C.CODE.FORBIDDEN);
+
+    if (game.mode === 'reveal') {
+      const ans = getPlayerById(game.answerId);
+      if (!ans) return U.fail(C.CODE.INTERNAL, '答案数据异常');
+      const rows = (game.guessIds || []).map((pid, i) => {
+        const p = getPlayerById(pid);
+        return p && { round: i + 1, guessedId: p.id, hit: p.id === ans.id, player: U.pickFields(p, C.CLIENT_FIELDS) };
+      }).filter(Boolean);
+      return U.ok(U.publicGame(game, rows, {
+        revealed: game.revealed || 1,
+        clues: U.revealCluesOf(ans, game.revealed || 1, game.dateKey),
+        maxScore: U.revealMaxScore(game.revealed || 1, game.maxGuesses)
+      }));
+    }
+
     return U.ok(U.publicGame(game, rowsFor(game, game.dateKey)));
   } catch (e) {
     console.error('[mock gameResume]', e);
+    return U.fail(C.CODE.INTERNAL, e.message);
+  }
+}
+
+/** gameReveal —— 对齐 cloudfunctions/gameReveal/index.js */
+function gameReveal(gameId) {
+  gameId = String(gameId || '');
+  if (!gameId) return U.fail(C.CODE.INVALID_PARAM);
+
+  try {
+    const game = findGame(gameId);
+    if (!game) return U.fail(C.CODE.GAME_NOT_FOUND);
+    if (game._openid !== OPENID) return U.fail(C.CODE.FORBIDDEN);
+    if (game.status !== 'playing') return U.fail(C.CODE.GAME_FINISHED);
+    if (game.mode !== 'reveal') return U.fail(C.CODE.INVALID_PARAM, '本局不是反向猜球');
+
+    const max = game.maxGuesses || C.MAX_GUESSES;
+    const next = Math.min((game.revealed || 1) + 1, C.REVEAL_ORDER.length);
+    if (next !== (game.revealed || 1)) {
+      game.revealed = next;
+      upsert(game);
+    }
+
+    const ans = getPlayerById(game.answerId);
+    if (!ans) return U.fail(C.CODE.INTERNAL, '答案数据异常');
+
+    const used = (game.guessIds || []).length;
+    return U.ok({
+      revealed: game.revealed || 1,
+      clues: U.revealCluesOf(ans, game.revealed || 1, game.dateKey),
+      maxScore: U.revealMaxScore(game.revealed || 1, max),
+      status: game.status,
+      used,
+      remaining: Math.max(0, max - used)
+    });
+  } catch (e) {
+    console.error('[mock gameReveal]', e);
     return U.fail(C.CODE.INTERNAL, e.message);
   }
 }
@@ -252,11 +347,18 @@ function gameResult(gameId) {
     return U.ok({
       gameId: game.gameId,
       mode: game.mode,
+      difficulty: game.difficulty || '',
       dateKey,
       status: game.status,
       used: (game.guessIds || []).length,
       score: game.score || 0,
-      rows: rowsFor(game, dateKey),
+      revealed: game.mode === 'reveal' ? (game.revealed || 1) : undefined,
+      rows: game.mode === 'reveal'
+        ? (game.guessIds || []).map((pid, i) => {
+            const p = getPlayerById(pid);
+            return p && { round: i + 1, guessedId: p.id, hit: p.id === answer.id, player: U.pickFields(p, C.CLIENT_FIELDS) };
+          }).filter(Boolean)
+        : rowsFor(game, dateKey),
       answer: detail
     });
   } catch (e) {
@@ -284,7 +386,7 @@ function peekTodayAnswer() {
 }
 
 module.exports = {
-  getPlayers, gameStart, gameGuess, gameResume, gameResult,
+  getPlayers, gameStart, gameGuess, gameResume, gameResult, gameReveal,
   resetGames, gameCount, peekTodayAnswer,
   VERSION
 };

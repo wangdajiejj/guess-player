@@ -40,8 +40,31 @@ const MIN_FAME = 3;
  * 由 meta/answer_pool 的 minFameDaily / minFameEndless 覆盖，可线上调。
  */
 const MIN_FAME_DAILY = 4;
-// 答案池 / 候选池上限，必须 >= 题库总人数，否则答案可能落在候选池外（游戏无解）
-// 详见 cloudfunctions/_shared/constants.js 同名注释
+
+/**
+ * 自由练习的难度分档（2026-10-25 新增，按知名度分级）：
+ *   star   明星局 —— 只抽家喻户晓的巨星（fame = 5）
+ *   normal 标准局 —— 知名球员（fame >= 4，与每日一题同档）
+ *   all    全员局 —— 整个答案池，含冷门（走 minFameEndless 配置，默认 3）
+ *
+ * 不传 difficulty 时保持原行为（all），老客户端与既有测试不受影响。
+ * 线上可用 meta/answer_pool 的 minFameStar / minFameNormal 覆盖前两档。
+ */
+const DIFFICULTIES = ['star', 'normal', 'all'];
+const MIN_FAME_STAR = 5;
+const MIN_FAME_NORMAL = 4;
+
+/**
+ * 答案池 / 候选池拉取上限。
+ *
+ * ⚠️ 这个数必须 >= 题库总人数，否则会出致命 bug：
+ *    候选池是「玩家能在搜索框里选到的全部球员」。一旦答案落在被截断的那部分，
+ *    玩家根本搜不到正确答案 —— 游戏无解，且违反 clue.js 的黄金不变量
+ *    「筛选结果必含答案」（scripts/test-candidates.js 守着）。
+ *    题库 200 人时 300 够用；扩到 500 人后被截掉 200，由 test-flow 的
+ *    「下发条数正确」抓出。
+ *    取 1000 是给未来继续扩池留余量，改题库时只要不超过 1000 就不用动这里。
+ */
 const MAX_POOL_SIZE = 1000;
 
 // 线索字段渲染顺序，前后端必须一致
@@ -49,6 +72,43 @@ const CLUE_ORDER = [
   'nationality', 'club', 'league', 'position',
   'age', 'height', 'shirt_number', 'preferred_foot'
 ];
+
+/**
+ * 「反向猜球」（mode = 'reveal'）的线索揭晓顺序（2026-10-25 新玩法）：
+ * 由宽到窄 —— 国籍 → 联赛 → 俱乐部 → 位置 → 年龄 → 身高 → 球衣号 → 惯用脚。
+ * 系统逐条公布**答案自身**的属性，玩家随时可猜；揭晓越少就猜中，得分越高
+ * （(9 - 已揭条数) × 100，与常规模式「越少步猜中分越高」同构）。
+ * 每条揭晓的线索都是答案的精确值（客户端可以拿去做绿色筛选，不变量依旧成立）。
+ */
+const REVEAL_ORDER = [
+  'nationality', 'league', 'club', 'position',
+  'age', 'height', 'shirt_number', 'preferred_foot'
+];
+
+/**
+ * 专题练习（2026-10-25）：按主题从答案池里切子集开局。
+ *
+ * 条件字段只用库里现成的（league / nationality / active / preferred_foot /
+ * position_group / 出生年份），不新增数据字段。
+ * ⚠️ 专题练习**不叠加难度档**（固定 fame>=3 全员池再切主题）：
+ *    明星档(5星)再切"门将专场"只剩几个人，抽两局就重复，干脆不组合。
+ * 客户端展示口径（label/顺序/人数）在 miniprogram/utils/themes.js，
+ * 两份表由 test-flow.js 的「主题口径对拍」守着，改这里必须同步那边。
+ */
+const THEMES = {
+  epl:       { label: '英超专场', league: '英超' },
+  laliga:    { label: '西甲专场', league: '西甲' },
+  seriea:    { label: '意甲专场', league: '意甲' },
+  bundes:    { label: '德甲专场', league: '德甲' },
+  legends:   { label: '退役传奇', active: false },
+  lefty:     { label: '左脚将', foot: '左脚' },
+  gk:        { label: '门将专场', group: 'GK' },
+  fw:        { label: '前锋专场', group: 'FW' },
+  brazil:    { label: '巴西球员', nationality: '巴西' },
+  argentina: { label: '阿根廷球员', nationality: '阿根廷' },
+  england:   { label: '英格兰球员', nationality: '英格兰' },
+  genz:      { label: '00后新星', bornAfter: 1999 }
+};
 
 // 细分位置 -> 位置大类（黄色判定基准）
 const POSITION_GROUP = {
@@ -63,12 +123,14 @@ const STATE = { GREEN: 'green', AMBER: 'amber', GRAY: 'gray' };
 // 数值箭头
 const ARROW = { UP: 'up', DOWN: 'down', EQUAL: 'equal' };
 
-// getPlayers 下发给客户端的字段白名单（控制包体）
+// getPlayers 下发给客户端的字段白名单（控制包体）。
+// fame_level 2026-10-25 加入：首页「按难度开球」要显示各档人数。
+// position_group 2026-10-25 加入：首页「专题练习」要显示门将/前锋专场的人数。
 const CLIENT_FIELDS = [
   'id', 'name_cn', 'name_en', 'aliases',
-  'nationality', 'club', 'league', 'position',
+  'nationality', 'club', 'league', 'position', 'position_group',
   'birth_date', 'height_cm', 'preferred_foot', 'shirt_number',
-  'pinyin', 'initials', 'active',
+  'pinyin', 'initials', 'active', 'fame_level',
   'primary_color', 'secondary_color'
 ];
 
@@ -109,7 +171,9 @@ const CODE_MSG = {
 module.exports = {
   MAX_GUESSES, AGE_TOL, HEIGHT_TOL, SHIRT_TOL,
   MIN_FAME, MIN_FAME_DAILY, MAX_POOL_SIZE,
-  CLUE_ORDER, POSITION_GROUP, STATE, ARROW,
+  DIFFICULTIES, MIN_FAME_STAR, MIN_FAME_NORMAL,
+  CLUE_ORDER, REVEAL_ORDER, POSITION_GROUP, STATE, ARROW,
+  THEMES,
   CLIENT_FIELDS, DETAIL_FIELDS,
   CODE, CODE_MSG
 };

@@ -16,12 +16,12 @@
   <view class="cc-chips">
     <block wx:for="{{chips}}" wx:key="key">
       <view
-        class="cc-chip {{tappable ? 'cc-chip-tap' : ''}}"
+        class="cc-chip cc-chip-in {{tappable ? 'cc-chip-tap' : ''}}"
         hover-class="{{tappable ? 'cc-chip-press' : 'none'}}"
         hover-stay-time="80"
         data-key="{{item.key}}"
         bindtap="onChip"
-        style="background: {{item.bg}}; color: {{item.textColor}}"
+        style="background: {{item.bg}}; color: {{item.textColor}}; animation-delay: {{120 + index * 45}}ms"
       >
         <text>{{item.text}}</text>
         <text wx:if="{{item.arrow}}" class="cc-arrow">{{item.arrow}}</text>

@@ -1,4 +1,10 @@
-/** 全局样式与配色变量 */
+/**
+ * 全局样式与配色变量
+ *
+ * 深色模式（2026-10-25）：全部配色只从这里取值，页面/组件禁止再写死颜色；
+ * 深色跟随系统（app.json darkmode + prefers-color-scheme），导航栏颜色
+ * 由 theme.json 切换。体验评分里「适配深色模式」一项由此得分。
+ */
 
 page {
   --gp-green: #6aaa64;
@@ -23,11 +29,94 @@ page {
   --gp-card: #ffffff;
   --gp-line: rgba(0, 0, 0, 0.07);
 
+  /* 输入框 / 浅底纹块 / 按压态 / 分隔灰 */
+  --gp-field: #f2f4f2;
+  --gp-field-hi: #f6f8f6;
+  --gp-divider: #d5d9d6;
+  --gp-holder: #dcdfdc;
+
+  /* 未启用的筛选 chip */
+  --gp-chip-bg: #f4f6f4;
+  --gp-chip-text: #6b716d;
+
+  /* 骨架屏（加载占位） */
+  --gp-skeleton: #eceeea;
+  --gp-skeleton-hi: #f7f9f6;
+
+  /* 禁用态按钮底色 */
+  --gp-disabled: #b7c2bb;
+
+  /* 顶部球场光晕（游戏页/反向页的背景渐变用） */
+  --gp-glow: rgba(255, 255, 255, 0.75);
+  --gp-bg-top: #eef4ef;
+
   background: var(--gp-bg);
   color: var(--gp-text);
   font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", sans-serif;
   font-size: 28rpx;
   line-height: 1.6;
+}
+
+/* ---------- 深色（跟随系统） ---------- */
+
+@media (prefers-color-scheme: dark) {
+  page {
+    --gp-green: #5fb967;
+    --gp-green-dark: #8fd49a;
+    --gp-green-bg: #1e3325;
+    --gp-amber: #d4c061;
+    --gp-amber-dark: #d4bf6d;
+    --gp-amber-bg: #33301c;
+    --gp-gray: #8b9096;
+    --gp-gray-dark: #c6ccc7;
+    --gp-gray-bg: #2a2e2a;
+
+    /* 主色在深色下点亮，用作文字/链接；按钮底色见下方 .gp-btn-primary 覆盖 */
+    --gp-main: #4cc38b;
+    --gp-main-light: #35a06c;
+    --gp-main-bg: #1c2f24;
+
+    --gp-text: #e9ede9;
+    --gp-text-sub: #a8b0a9;
+    --gp-text-mute: #78817a;
+
+    --gp-bg: #121612;
+    --gp-card: #1c211d;
+    --gp-line: rgba(255, 255, 255, 0.09);
+
+    --gp-field: #242a25;
+    --gp-field-hi: #2a312b;
+    --gp-divider: #3a423b;
+    --gp-holder: #3a423b;
+
+    --gp-chip-bg: #242a25;
+    --gp-chip-text: #aab2ab;
+
+    --gp-skeleton: #232924;
+    --gp-skeleton-hi: #2e3630;
+
+    --gp-disabled: #3a423b;
+
+    --gp-glow: rgba(44, 66, 50, 0.5);
+    --gp-bg-top: #161c17;
+  }
+
+  /* 实心主按钮：深色下主色变量偏亮（是为文字对比度），按钮用固定深绿保证白字可读 */
+  .gp-btn-primary {
+    background: #148053;
+    color: #ffffff;
+  }
+
+  .gp-btn-primary.gp-btn-disabled {
+    background: var(--gp-disabled);
+    color: #78817a;
+  }
+
+  .gp-btn-ghost {
+    background: transparent;
+    color: var(--gp-main);
+    border: 2rpx solid var(--gp-main);
+  }
 }
 
 view, text, scroll-view, input, button {
@@ -59,7 +148,7 @@ view, text, scroll-view, input, button {
 }
 
 .gp-btn-primary.gp-btn-disabled {
-  background: #b7c2bb;
+  background: var(--gp-disabled);
 }
 
 .gp-btn-ghost {
@@ -75,3 +164,32 @@ view, text, scroll-view, input, button {
 
 .gp-mute { color: var(--gp-text-mute); }
 .gp-sub { color: var(--gp-text-sub); }
+
+/* ---------- 骨架屏通用（页面里按结构拼装） ---------- */
+
+.sk {
+  position: relative;
+  overflow: hidden;
+  background: var(--gp-skeleton);
+}
+
+.sk::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 100%;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    var(--gp-skeleton-hi) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  transform: translateX(-100%);
+  animation: sk-shine 1.4s ease-in-out infinite;
+}
+
+@keyframes sk-shine {
+  to { transform: translateX(100%); }
+}

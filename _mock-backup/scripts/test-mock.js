@@ -57,9 +57,12 @@ G('候选池下发');
   const keys = Object.keys(p0);
   ok('字段与 CLIENT_FIELDS 完全一致',
     keys.length === C.CLIENT_FIELDS.length && C.CLIENT_FIELDS.every(f => f in p0), keys);
-  ['search_index', 'intro', 'fun_fact', 'fame_level', 'data_as_of'].forEach(f => {
+  // fame_level 自 2026-10-25 起随候选包下发（首页「按难度开球」要显示各档人数），
+  // 它不是秘密（answerId 才是）；intro/趣事/搜索索引仍然严禁进候选包。
+  ['search_index', 'intro', 'fun_fact', 'data_as_of'].forEach(f => {
     ok(`不下发 ${f}`, !(f in p0));
   });
+  ok('fame_level 随候选包下发（难度分档要用）', p0.fame_level >= 1 && p0.fame_level <= 5, p0.fame_level);
   ok('含队色（程序化头像要用）', !!p0.primary_color && !!p0.secondary_color);
 
   const again = M.getPlayers(r.data.version);
@@ -195,7 +198,9 @@ G('打包体积');
   const f = path.join(__dirname, '../miniprogram/utils/mock-players.js');
   const kb = Math.round(fs.statSync(f).size / 1024);
   // 小程序主包 2MB 红线，这块是最占地方的一坨
-  ok(`mock-players.js ${kb} KB，占主包不到 10%`, kb < 200, kb);
+  // 主包上限 2MB；mock-players 是题库全量副本（548 人约 325KB），留 400KB 红线。
+  // 题库再扩到逼近这条线时，考虑把 intro/fun_fact 从 mock-players 里剔除。
+  ok(`mock-players.js ${kb} KB，仍在红线内`, kb < 400, kb);
 }
 
 /* ---------- 8. SHA-256 实现正确性 ---------- */

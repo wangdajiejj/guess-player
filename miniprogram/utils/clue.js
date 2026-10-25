@@ -96,6 +96,37 @@ function buildClues(rows) {
   return out;
 }
 
+/**
+ * 跨行去重：多行猜测里「同字段+同值+同判定+同箭头」的线索，对过滤完全等价
+ * （compileField 对这些条目逐条编译的结果一样），只留一条，不然候选面板里全是重复标签。
+ * 数值字段的箭头参与去重键：39↑ 和 39↓ 文字相同但约束不同，不能并。
+ * 去重后按字段归组排序（国籍一组、俱乐部一组…），同字段内保持猜测的先后顺序。
+ * @param {Array} clues buildClues 的产物
+ * @returns {{ clues: Array, idRemap: Object }} 去重后的线索 + 原始 id -> 代表 id 的映射
+ *          （面板的初始条件可能指着被合并掉的重复项，要拿映射换到代表 id）
+ */
+function dedupeClues(clues) {
+  const order = {};
+  theme.CLUE_META.forEach((m, i) => { order[m.key] = i; });
+
+  const seen = {};    // sig -> 代表线索 id
+  const idRemap = {};
+  const out = [];
+  (clues || []).forEach(c => {
+    const sig = c.key + '|' + c.state + '|' + c.text + '|' + (c.arrow || '');
+    if (seen[sig]) {
+      idRemap[c.id] = seen[sig];
+      return;
+    }
+    seen[sig] = c.id;
+    idRemap[c.id] = c.id;
+    out.push(c);
+  });
+
+  out.sort((a, b) => (order[a.key] != null ? order[a.key] : 99) - (order[b.key] != null ? order[b.key] : 99));
+  return { clues: out, idRemap };
+}
+
 /* ---------------- 编译约束 ---------------- */
 
 function firstOfType(entries, state) {
@@ -277,6 +308,6 @@ function describeConstraints(clues, dateKey) {
 
 module.exports = {
   TOL, POSITION_GROUP, GROUP_CN, NUMERIC_KEYS,
-  valueOf, isUsable, buildClues,
+  valueOf, isUsable, buildClues, dedupeClues,
   compileConstraints, filterPlayers, describeConstraints
 };

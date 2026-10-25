@@ -3,10 +3,13 @@ const S = require('../../utils/storage.js');
 const searchUtil = require('../../utils/search.js');
 const clueUtil = require('../../utils/clue.js');
 const sfx = require('../../utils/sfx.js');
+const themes = require('../../utils/themes.js');
 
 const MAX_RETRY = 1;
 const TIP_KEY = 'gp_tip_clue';      // 「点标签可筛选」新手提示只看一次
 
+// 难度档显示名（star/normal/all，与云函数同口径）
+const DIFF_NAME = { star: '明星局', normal: '标准局', all: '全员局' };
 Page({
   data: {
     mode: 'daily',
@@ -32,14 +35,18 @@ Page({
   onLoad(options) {
     const mode = options.mode === 'endless' ? 'endless' : 'daily';
     this._resumeId = options.gameId || '';
-    this.setData({
-      mode,
-      titleText: mode === 'daily' ? '每日一题' : '自由练习'
-    });
+    this._difficulty = ['star', 'normal', 'all'].indexOf(options.difficulty) !== -1
+      ? options.difficulty : '';
+    // 专题练习：带主题时忽略难度档，标题直接用主题名
+    this._theme = themes.labelOf(options.theme) ? options.theme : '';
+    const titleText = mode === 'daily'
+      ? '每日一题'
+      : (this._theme
+          ? themes.labelOf(this._theme)
+          : '自由练习' + (DIFF_NAME[this._difficulty] ? ' · ' + DIFF_NAME[this._difficulty] : ''));
+    this.setData({ mode, titleText });
 
-    wx.setNavigationBarTitle({
-      title: mode === 'daily' ? '每日一题' : '自由练习'
-    });
+    wx.setNavigationBarTitle({ title: titleText });
 
     sfx.setEnabled(S.loadSettings().sound !== false);
     this.loadPoolThenStart();
@@ -66,6 +73,7 @@ Page({
       });
       this.setData({ players: pool });
       this.start();
+      this.refreshPool();
       return;
     }
 
@@ -88,15 +96,35 @@ Page({
       });
   },
 
+  /**
+   * 后台校一遍题库版本：缓存命中只保证"能玩"，不保证"是最新的"。
+   * 答案从服务端/新版题库里抽，本地缓存如果还是旧版，可能出现
+   * 「筛选结果里没有答案甚至筛成 0 人」——版本号变了就整包热换，
+   * 面板若开着，players 观察者会带着新池子重筛一遍（玩家无感）。
+   */
+  refreshPool() {
+    api.getPlayers(S.getVersion())
+      .then(data => {
+        if (data && data.players && data.players.length) {
+          S.savePlayers(data.players, data.version, data.updatedAt);
+          data.players.forEach(p => { p.__idx = searchUtil.buildSearchIndex(p); });
+          this.setData({ players: data.players });
+        }
+      })
+      .catch(() => { /* 后台校验失败不影响当前对局 */ });
+  },
+
   start(retryCount = 0) {
     this.setData({ status: 'loading', errMsg: '' });
 
     const isDaily = this.data.mode === 'daily';
     // daily：服务端幂等，永远返回今天的那一局
-    // endless：带 gameId 则续，否则新开
+    // endless：带 gameId 则续，否则按难度/专题新开
     const task = isDaily
       ? api.gameStart('daily')
-      : (this._resumeId ? api.gameResume(this._resumeId) : api.gameStart('endless'));
+      : (this._resumeId
+          ? api.gameResume(this._resumeId)
+          : api.gameStart('endless', this._difficulty, this._theme));
 
     task
       .then(d => this.applyGame(d))
@@ -134,6 +162,18 @@ Page({
     });
 
     S.saveLastGame(d.gameId, this.data.mode);
+
+    // 续局时以服务端记录的难度/专题为准，把标题对齐
+    if (this.data.mode === 'endless') {
+      let t = '';
+      if (d.theme && themes.labelOf(d.theme)) t = themes.labelOf(d.theme);
+      else if (d.difficulty && DIFF_NAME[d.difficulty]) t = '自由练习 · ' + DIFF_NAME[d.difficulty];
+      else t = '自由练习';
+      if (t !== this.data.titleText) {
+        this.setData({ titleText: t });
+        wx.setNavigationBarTitle({ title: t });
+      }
+    }
 
     // 已结束就直接进结果页
     if (d.status !== 'playing') {
@@ -177,6 +217,10 @@ Page({
    */
   onClue(e) {
     if (this.data.status !== 'playing' || this.data.submitting) return;
+    if (!this.data.players.length) {
+      wx.showToast({ title: '题库还没准备好', icon: 'none' });
+      return;
+    }
     const { key, round } = (e && e.detail) || {};
     if (!key) return;
 

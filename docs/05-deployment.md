@@ -139,7 +139,7 @@ scripts\关闭本地测试-提审前必点.bat
 它会拆掉全部 MOCK 段、删掉 6 个 `mock-*.js` 与 3 个 mock 脚本（省约 130 KB 主包），
 再跑一遍 `check-mp.js` —— 看到 **15 条全绿**才算干净。
 
-开着 `USE_MOCK` 上传意味着：**比对逻辑和 500 人的答案被打进了客户端**，
+开着 `USE_MOCK` 上传意味着：**比对逻辑和 548 人的答案被打进了客户端**，
 别人反编译后遍历候选池就能试出每天的答案 —— 这是全项目的架构红线（见 docs/03-algorithm.md §6）。
 
 `check-mp.js` 第 7 组的 4 条断言会守着这件事，任何一条不满足就直接失败：
@@ -211,7 +211,7 @@ python database/validate.py database/players.full.jsonl 2026-10-11 --fix  # 必�
 控制台 → 集合 `players` → 导入 → 选 JSON Lines 文件 → **冲突处理：upsert**（`_id` 用 `p001` 这种字面量，
 重导不会重复插入）。
 
-> ⚠️ **导入后必须核对集合条数 = 500**。微信导入界面偶发静默丢条；一旦少了，
+> ⚠️ **导入后必须核对集合条数 = 548**。微信导入界面偶发静默丢条；一旦少了，
 > 客户端候选池不全，答案又可能落在缺失的那部分 —— 直接变成死题。
 > 核对方式：集合页看总数，再在小程序里搜一个排在最末的球员（如 `p500`）确认能搜到。
 
@@ -228,7 +228,7 @@ python database/validate.py database/players.full.jsonl 2026-10-11 --fix  # 必�
 ```json
 { "_id": "daily_salt",  "salt": "换成一串你自己的随机字符串", "mode": "per_user" }
 { "_id": "answer_pool", "minFameDaily": 4, "minFameEndless": 3, "activeOnly": false, "excludedIds": [] }
-{ "_id": "players_meta","playerVersion": "2026-10-11", "playerCount": 200, "updatedAt": 1791676800000 }
+{ "_id": "players_meta","playerVersion": "2026-10-25", "playerCount": 548, "updatedAt": 1791676800000 }
 ```
 
 - `mode: "per_user"` = 每人每天题目不同（当前采用）；
@@ -236,6 +236,9 @@ python database/validate.py database/players.full.jsonl 2026-10-11 --fix  # 必�
 - `minFameDaily`(4) 比 `minFameEndless`(3) 高一档：**每日一题只用大家都认识的球员**，
   冷门球员只能被猜、不能当每日答案 —— 没听说过的人靠推理也唤不出那个人名，只剩挫败。
   自由练习是玩家主动选的，愿意挑战冷门就让他挑战。两个数都能线上改，不用发版。
+- 自由练习 2026-10-25 起分三档难度（首页可选）：`star`（明星局，默认 fame=5）、
+  `normal`（标准局，默认 fame=4）、`all`（全员局，走 `minFameEndless`）。
+  需要线上调档时在 answer_pool 里加 `"minFameStar": 5, "minFameNormal": 4` 即可。
 - 老字段 `minFame` 仍作兜底（两个新字段都没配时读它），方便灰度回退。
 - `playerVersion` 每次改球员数据都要 +1，否则客户端不会重新拉取候选池。
 
@@ -251,10 +254,10 @@ node scripts/sync-shared.js     # 必须！把 _shared 的三个文件复制进 
 > 微信只上传单个云函数目录，跨目录 `require('../_shared/...')` 在云上会 `MODULE_NOT_FOUND`。
 > 这个脚本还会检查副本里不能出现 `_shared` 引用。
 
-然后依次右键 5 个目录 → 「上传并部署：云端安装依赖」：
+然后依次右键 6 个目录 → 「上传并部署：云端安装依赖」：
 
 ```
-gameStart → gameGuess → gameResume → gameResult → getPlayers
+gameStart → gameGuess → gameResume → gameResult → gameReveal → getPlayers
 ```
 
 上传后到云开发控制台 → 云函数 → 日志，确认「运行时间」正常（首次冷启动 1~2 秒属正常）。
@@ -381,7 +384,7 @@ gameStart → gameGuess → gameResume → gameResult → getPlayers
 | 事项 | 频率 | 怎么做 |
 | --- | --- | --- |
 | 校准球员数据（转会、号码、年龄） | 每月 | 改 jsonl → `validate.py` → 重新导入 → **`playerVersion` +1** |
-| 扩充题库 | 已完成：200 → **500 人**（退役传奇 + 现役新星 + 边后卫/左脚） | 同上；注意退役传奇必须填真实代表队（否则互绿送答案）。扩池后**必须重跑** `simulate.js` 复核难度，并检查 `MAX_POOL_SIZE` ≥ 新总人数 |
+| 扩充题库 | 已完成：200 → 500 → **548 人**（2026-10-25 又扩 48 人：现役 12 + 退役传奇 36） | 同上；注意退役传奇必须填真实代表队（否则互绿送答案）。扩池后**必须重跑** `simulate.js` 复核难度，并检查 `MAX_POOL_SIZE` ≥ 新总人数 |
 | 看云开发用量 | 每周 | 控制台 → 用量监控，读次数接近 5 万/日时考虑给 `getPlayers` 加 CDN |
 | 看崩溃与云函数报错 | 每天 | 控制台 → 云函数日志，搜 `[gameStart]` 之类的前缀 |
 | 换每日答案种子 | 半年一次 | 改 `meta/daily_salt`，不影响进行中的对局 |

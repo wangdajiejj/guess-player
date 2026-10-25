@@ -12,6 +12,7 @@ Page({
     status: 'lost',
     won: false,
     used: 0,
+    revealed: 0,
     max: 8,
     scoreText: '',
     modeText: '',
@@ -49,8 +50,9 @@ Page({
         if (!d || !d.answer) throw new Error('返回数据不完整');
         this.applyResult(d);
         this.setData({ loading: false });
-        // 静默预生成，让用户点"分享给好友"时立刻有图
-        this.genShare(true);
+        // 静默预生成，让用户点"分享给好友"时立刻有图。
+        // 反向猜球的回放没有 verdict 色块，战绩图暂不支持该模式，跳过预生成。
+        if (d.mode !== 'reveal') this.genShare(true);
       })
       .catch(e => {
         this.setData({
@@ -74,8 +76,12 @@ Page({
 
     this._rawRows = rows;
 
-    // 本地战绩：同一个 gameId 只计一次（见 storage.recordGame）
-    S.recordGame(won, d.used || rows.length, d.gameId);
+    // 本地战绩：同一个 gameId 只计一次（见 storage.recordGame）。
+    // 反向猜球的「步数」口径 = 揭了几条线索就猜中（与服务端计分一致），
+    // 分布图里看到的即「用了几条线索」。
+    const isReveal = d.mode === 'reveal';
+    const steps = isReveal ? (d.revealed || 1) : (d.used || rows.length);
+    S.recordGame(won, steps, d.gameId);
 
     // 若本局结束且是无限模式，清掉"未完成对局"记录
     const last = S.loadLastGameFull();
@@ -88,13 +94,16 @@ Page({
       status: d.status,
       won,
       used: d.used || rows.length,
+      revealed: isReveal ? (d.revealed || 1) : 0,
       max,
       rows,
       answer: a,
-      scoreText: won ? `${d.used || rows.length}/${max}` : `X/${max}`,
+      scoreText: isReveal
+        ? (won ? `${d.score || 0} 分` : `X/${max}`)
+        : (won ? `${d.used || rows.length}/${max}` : `X/${max}`),
       modeText: d.mode === 'daily'
         ? `每日一题 · ${d.dateKey || ''}`
-        : '自由练习',
+        : (isReveal ? '反向猜球' : '自由练习'),
       info: this.buildInfo(a, d.dateKey || '')
     });
   },
@@ -194,9 +203,14 @@ Page({
 
   onShareAppMessage() {
     // 有预生成好的图就用，没有就用系统默认截图
+    const isReveal = this.data.mode === 'reveal';
     const title = this.data.won
-      ? `我用 ${this.data.used}/8 次猜中了今天这名球员`
-      : '这名球员我 8 次都没猜出来，你来试试';
+      ? (isReveal
+          ? `反向猜球：我只用 ${this.data.revealed} 条线索就猜中了他`
+          : `我用 ${this.data.used}/8 次猜中了今天这名球员`)
+      : (isReveal
+          ? '反向猜球：8 次机会我都没猜出他是谁'
+          : '这名球员我 8 次都没猜出来，你来试试');
     return {
       title,
       path: '/pages/index/index',
@@ -205,10 +219,13 @@ Page({
   },
 
   onShareTimeline() {
+    const isReveal = this.data.mode === 'reveal';
     return {
       // 措辞避开"通关/过关/挑战成功"这类游戏化表述，降低被判游戏类目的风险（见 docs/05-deployment.md §7.2）
       title: this.data.won
-        ? `猜球员 ${this.data.used}/8 · 今日已答对`
+        ? (isReveal
+            ? `猜球员 · ${this.data.revealed} 条线索就猜中了`
+            : `猜球员 ${this.data.used}/8 · 今日已答对`)
         : '猜球员 — 8 次机会找出他是谁',
       query: '',
       imageUrl: this._sharePath || ''
@@ -219,6 +236,11 @@ Page({
 
   again() {
     sfx.play('tap');
+    // 反向猜球的「再来一局」回同模式；常规回自由练习
+    if (this.data.mode === 'reveal') {
+      wx.redirectTo({ url: '/pages/reveal/reveal' });
+      return;
+    }
     wx.redirectTo({ url: '/pages/game/game?mode=endless' });
   },
 

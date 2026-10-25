@@ -1,0 +1,119 @@
+<view class="reveal">
+  <!-- 顶栏：与游戏页同一套深绿语言 -->
+  <view class="topbar">
+    <view class="tb-left">
+      <view class="tb-title">反向猜球</view>
+      <view class="tb-sub">{{difficulty === 'star' ? '明星局' : difficulty === 'normal' ? '标准局' : '全员局'}}</view>
+    </view>
+    <view class="tb-right">
+      <view class="tb-score">
+        <text class="tb-num {{remaining <= 2 && status === 'playing' ? 'tb-num-danger' : ''}}">{{maxScore}}</text>
+      </view>
+      <view class="tb-label">现在猜中的得分</view>
+    </view>
+  </view>
+
+  <!-- 机会行 -->
+  <view class="chance-bar">
+    <view class="chance-left">剩余机会 {{remaining}}/{{maxGuesses}}</view>
+    <view class="chance-right">已揭 {{revealedCount}}/8 条线索</view>
+  </view>
+
+  <!-- 主体 -->
+  <scroll-view class="body" scroll-y enhanced show-scrollbar="{{false}}">
+    <block wx:if="{{status === 'loading'}}">
+      <!-- 开局骨架：8 个待揭晓的线索槽 -->
+      <view class="sk-slots">
+        <view class="sk-slot" wx:for="{{[0,1,2,3,4,5,6,7]}}" wx:key="*this">
+          <view class="sk sk-slot-label"></view>
+          <view class="sk sk-slot-bar"></view>
+        </view>
+      </view>
+      <view class="sk-note gp-sub">正在准备题目…</view>
+    </block>
+
+    <block wx:elif="{{status === 'error'}}">
+      <view class="gp-state">
+        <text class="gp-sub">{{errMsg}}</text>
+        <button class="gp-btn gp-btn-ghost btn-retry" hover-class="btn-press" bindtap="retry">重试</button>
+      </view>
+    </block>
+
+    <block wx:else>
+      <!-- 线索槽 -->
+      <view class="clue-board gp-card">
+        <view
+          wx:for="{{slots}}"
+          wx:key="key"
+          class="slot {{item.locked ? 'slot-locked' : 'slot-open'}}"
+          hover-class="{{item.locked || status !== 'playing' ? 'none' : 'slot-press'}}"
+          data-key="{{item.key}}"
+          bindtap="onSlotTap"
+        >
+          <view class="slot-label">{{item.label}}</view>
+          <view wx:if="{{item.locked}}" class="slot-locked-txt">第 {{item.order}} 条揭晓</view>
+          <view wx:else class="slot-value">{{item.text}}</view>
+        </view>
+        <view wx:if="{{status === 'playing'}}" class="board-tip">点已揭开的线索，筛出还符合的球员</view>
+      </view>
+
+      <!-- 揭晓按钮 -->
+      <button
+        wx:if="{{status === 'playing'}}"
+        class="gp-btn btn-reveal {{revealedCount >= 8 || revealing ? 'btn-reveal-off' : ''}}"
+        hover-class="{{revealedCount >= 8 || revealing ? 'none' : 'btn-press'}}"
+        bindtap="revealNext"
+        disabled="{{revealedCount >= 8 || revealing}}"
+      >
+        <text wx:if="{{revealing}}">揭晓中…</text>
+        <text wx:elif="{{revealedCount >= 8}}">8 条线索全揭开了</text>
+        <text wx:else>揭晓下一条（猜中只剩 {{maxScore > 100 ? maxScore - 100 : 100}} 分）</text>
+      </button>
+
+      <!-- 已猜名单 -->
+      <view wx:if="{{guesses.length}}" class="guess-list gp-card">
+        <view class="gl-title">已猜 {{guesses.length}} 人（都不对）</view>
+        <view class="gl-chips">
+          <view wx:for="{{guesses}}" wx:key="round" class="gl-chip">✗ {{item.player.name_cn}}</view>
+        </view>
+      </view>
+
+      <view wx:if="{{status !== 'playing' && guesses.length}}" class="finish-tip">
+        <text wx:if="{{status === 'won'}}">🎉 猜中了！正在进入结果页…</text>
+        <text wx:else>机会用完了，正在揭晓答案…</text>
+      </view>
+    </block>
+
+    <view class="safe-gap"></view>
+  </scroll-view>
+
+  <!-- 底部 CTA -->
+  <view class="bottom" wx:if="{{status !== 'loading' && status !== 'error'}}">
+    <button
+      class="gp-btn gp-btn-primary btn-cta {{status !== 'playing' || submitting ? 'gp-btn-disabled' : ''}}"
+      hover-class="{{status === 'playing' && !submitting ? 'btn-press' : 'none'}}"
+      bindtap="openSheet"
+      disabled="{{status !== 'playing' || submitting}}"
+    >
+      <text wx:if="{{submitting}}">核对中…</text>
+      <text wx:else>我知道他是谁（剩 {{remaining}} 次）</text>
+    </button>
+  </view>
+
+  <!-- 搜索面板 / 候选筛选面板 -->
+  <search-sheet
+    show="{{sheetShow}}"
+    players="{{players}}"
+    guessed="{{guessIds}}"
+    bind:close="closeSheet"
+    bind:select="onSelect"
+  />
+  <candidate-sheet
+    panel="{{candPanel}}"
+    players="{{players}}"
+    guessed="{{guessIds}}"
+    date-key="{{dateKey}}"
+    bind:close="closeCand"
+    bind:select="onCandSelect"
+  />
+</view>

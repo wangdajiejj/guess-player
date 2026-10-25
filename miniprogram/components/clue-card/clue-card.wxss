@@ -1,10 +1,17 @@
 .cc-card {
-  background: var(--gp-card, #fff);
+  background: var(--gp-card);
   border-radius: 16rpx;
   padding: 20rpx 22rpx;
   margin-bottom: 16rpx;
   box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.04);
   border: 2rpx solid transparent;
+  /* 新挂载的卡片滑入（wx:key=round 保证旧行不重放动画） */
+  animation: cc-card-in 0.32s ease-out both;
+}
+
+@keyframes cc-card-in {
+  from { opacity: 0; transform: translateY(28rpx) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 .cc-card.cc-hit {
@@ -28,7 +35,7 @@
 .cc-name {
   font-size: 30rpx;
   font-weight: 500;
-  color: #1f2421;
+  color: var(--gp-text);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -44,7 +51,7 @@
 
 .cc-round-txt {
   font-size: 22rpx;
-  color: #9aa09c;
+  color: var(--gp-text-mute);
 }
 
 .cc-hit-badge {
@@ -68,6 +75,13 @@
   font-size: 24rpx;
   margin: 0 12rpx 12rpx 0;
   line-height: 1.4;
+  /* 逐个弹出：delay 由 wxml 按 index 注入 */
+  animation: cc-chip-pop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@keyframes cc-chip-pop {
+  from { opacity: 0; transform: scale(0.6); }
+  to   { opacity: 1; transform: scale(1); }
 }
 
 .cc-arrow {

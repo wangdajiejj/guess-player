@@ -184,7 +184,7 @@ python scripts/audit-data.py --top=20        # 分布榜显示前 20
 
 ```bash
 node scripts/simulate.js              # 每日一题池（fame>=4，250 人）
-node scripts/simulate.js --pool=all   # 自由练习池（fame>=3，500 人）
+node scripts/simulate.js --pool=all   # 自由练习池（fame>=3，548 人）
 node scripts/simulate.js --quick      # 只跑 40 人，快
 node scripts/simulate.js --max=6      # 试算"只给 6 次机会"会怎样
 ```
@@ -201,7 +201,7 @@ node scripts/simulate.js --max=6      # 试算"只给 6 次机会"会怎样
 | 池 | 新手平均（随机+过滤） | 老手平均（minimax） | 老手最坏 | 8 步通关率 |
 | --- | --- | --- | --- | --- |
 | 每日一题 250 人 | 2.58 步 | **2.37 步** | 3 步 | 100% |
-| 自由练习 500 人 | 2.70 步 | **2.49 步** | 4 步 | 100% |
+| 自由练习 548 人 | 2.70 步 | **2.49 步** | 4 步 | 100% |
 
 <details>
 <summary>对比：扩容前（200 人题库）的基线</summary>
@@ -218,7 +218,7 @@ node scripts/simulate.js --max=6      # 试算"只给 6 次机会"会怎样
 
 **怎么读这两个数**：
 
-- 两个模型都是"知道全部 500 人属性 + 能完美过滤"的机器人。真人记不住大部分球员的
+- 两个模型都是"知道全部 548 人属性 + 能完美过滤"的机器人。真人记不住大部分球员的
   身高和球衣号，实际会明显更慢，**8 次机会是给真人的容错余量**。
 - 所以验收盯的是两条硬底线，不是"平均步数要接近 8"：
   1. **最坏步数 ≤ 8** —— 保证不存在"必然猜不出"的死题（当前最坏 4，余量充足）；
@@ -257,7 +257,7 @@ node scripts/toggle-mock.js status      # 只查当前处于哪个模式
 > 那 12 条 SHA-256 对拍抓到过本项目最阴的一个 bug（见 §5）：
 > 手写的 Σ0 写成了 `ROTR^15`（规范是 **22**），三份独立实现互相一致却都对不上标准库。
 
-**提审前必须关闭**：开着它等于把比对逻辑和 500 人答案池打进客户端。
+**提审前必须关闭**：开着它等于把比对逻辑和 548 人答案池打进客户端。
 关掉后 `check-mp.js` 第 7 组的 3 条硬断言会守着这件事（`USE_MOCK === false`、
 `miniprogram/utils/` 下无 `mock-*.js`、没有源码还在 `require('mock-*')`）。
 
@@ -353,7 +353,7 @@ node scripts/sync-shared.js       #  改过 _shared 后必跑
 □ node scripts/sync-shared.js             云函数副本与 _shared 一致
 □ python scripts/gen-mock-core.py          本地测试模式的算法副本与 _shared 一致（开着 Mock 时）
 □ 500 条数据 primary_color / secondary_color 均为合法 HEX（头像靠它画）
-□ 导入云数据库后核对条数 = 500，且客户端能搜到最靠后的球员（分页没被截断）
+□ 导入云数据库后核对条数 = 548，且客户端能搜到最靠后的球员（分页没被截断）
 □ app.js 的 ENV_ID 已替换成真实环境 ID
 □ 手工用例 M1-M12 / R1-R6 / D1-D8 / L1-L6 全过
 □ 用户隐私保护指引已在 mp 后台填写并审核通过

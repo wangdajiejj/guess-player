@@ -1,8 +1,8 @@
 # guess-player · 足球猜球员
 
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
-![Players](https://img.shields.io/badge/players-500-blue.svg)
-![Tests](https://img.shields.io/badge/tests-299%20passing-brightgreen.svg)
+![Players](https://img.shields.io/badge/players-548-blue.svg)
+![Tests](https://img.shields.io/badge/tests-378%20passing-brightgreen.svg)
 ![No assets](https://img.shields.io/badge/assets-0-lightgrey.svg)
 
 足球版 Wordle：每天一位神秘球员，你有 **8 次机会**把他猜出来。
@@ -22,8 +22,12 @@
 
 | 模式 | 答案怎么来 | 机会 | 限制 |
 | --- | --- | --- | --- |
-| **每日挑战** | 按「日期 + 每位玩家 ID」散列抽取，人人不同 | 8 次 | 一天一局 |
-| **无限模式** | 从答案池随机抽 | 8 次 | 随便玩 |
+| **每日一题** | 按「日期 + 每位玩家 ID」散列抽取，人人不同 | 8 次 | 一天一局 |
+| **自由练习 · 明星局** | 只从知名度 5 星的巨星里随机抽 | 8 次 | 随便玩 |
+| **自由练习 · 标准局** | 知名度 ≥ 4 星（与每日一题同档） | 8 次 | 随便玩 |
+| **自由练习 · 全员局** | 整个答案池随机抽，含冷门 | 8 次 | 随便玩 |
+| **专题练习** | 按主题切子池开局：英超/西甲/意甲/德甲专场、退役传奇、左脚将、门将/前锋专场、巴西/阿根廷/英格兰球员、00后新星 | 8 次 | 随便玩 |
+| **反向猜球** | 系统逐条揭开答案自身属性（国籍→联赛→俱乐部→…），随时可猜，揭得越少分越高 | 8 次 | 随便玩 |
 
 - **点线索筛候选池**：结果页里任意一条线索标签都能点。点了之后，剩余候选池会按那条线索
   实时收窄 —— 而**筛完的结果必定包含答案**（每条约束都是答案的必要条件，
@@ -36,17 +40,20 @@
 
 ## 题库
 
-**500 人**，现役 292 + 退役传奇 208，覆盖 **52 个国籍 / 78 家俱乐部 / 14 个联赛**。
+**548 人**，现役 302 + 退役传奇 246，覆盖 **52 个国籍 / 86 家俱乐部 / 15 个联赛**。
 每人 27 个字段，含中文译名、英文名、别名、简介、冷知识。
+数据校准日期 **2026-10-25**（转会与号码按 2026-27 赛季开季名单逐人核实）。
 
 答案池按模式分档 —— 冷门球员当每日答案时，没听说过的人靠推理也猜不出，只剩挫败：
 
 | 模式 | 池子 | 知名度门槛 |
 | --- | --- | --- |
-| 每日一题 | 250 人 | ≥ 4 星 |
-| 自由练习 | 500 人 | ≥ 3 星 |
+| 每日一题 | 278 人 | ≥ 4 星 |
+| 明星局 | 75 人 | = 5 星 |
+| 标准局 | 278 人 | ≥ 4 星 |
+| 全员局 | 548 人 | ≥ 3 星 |
 
-数据主文件 `database/players.full.jsonl`，源名册 `database/roster_{a..g}.py`。
+数据主文件 `database/players.full.jsonl`，源名册 `database/roster_{a..h}.py`。
 校验脚本 `database/validate.py`（管字段合法，阻断式）与 `scripts/audit-data.py`（管数据好用，信息性）。
 
 ---
@@ -57,8 +64,8 @@
 miniprogram/          客户端：页面、组件、工具
   components/         player-badge（程序化头像）、clue-card、candidate-sheet、search-sheet
   utils/              clue.js（按线索筛候选池）、age.js、sfx.js、rank.js、share.js …
-cloudfunctions/       5 个云函数 + _shared/（单一真源，改完要跑 sync-shared.js）
-database/             players.full.jsonl（500 人）+ roster_{a..g}.py + validate.py
+cloudfunctions/       6 个云函数 + _shared/（单一真源，改完要跑 sync-shared.js）
+database/             players.full.jsonl（548 人）+ roster_{a..h}.py + validate.py
 scripts/              测试、本地模式开关、一键验证
 docs/                 01-PRD / 02-database / 03-algorithm / 04-testing
                       05-deployment / 06-备案截图
@@ -98,8 +105,9 @@ docs/                 01-PRD / 02-database / 03-algorithm / 04-testing
 scripts\一键测试.bat
 ```
 
-299 条断言，分 9 段跑：判定算法 32、对局流程 77、搜索 51、候选筛选 36
-（含 1.1 万次「筛完答案还在不在」）、音效 24、排行榜计分 66、客户端结构 13~15
+378 条断言，分 9 段跑：判定算法 32、对局流程 150（含难度分档 8 条、反向猜球 30 条、
+专题练习 35 条：12 主题客户端/服务端口径逐一对拍、答案必落主题内、难度被忽略、非法主题 1001）、搜索 51、候选筛选 41
+（含 1.1 万次「筛完答案还在不在」与线索去重等价性：合并重复标签前后筛选结果逐位一致）、音效 24、排行榜计分 66、客户端结构 13~15
 （开/关本地测试模式时条数不同）、外加可玩性模拟（平均步数须落在 2~5.5）与题库校验。
 
 ---
@@ -112,7 +120,7 @@ scripts\一键测试.bat
 | 层 | 目录 | 说明 |
 | --- | --- | --- |
 | 前端 | `miniprogram/` | 页面、组件、工具 |
-| 后端 | `cloudfunctions/` | 5 个云函数 + `_shared/`（单一真源，改完要跑 `sync-shared.js`） |
+| 后端 | `cloudfunctions/` | 6 个云函数 + `_shared/`（单一真源，改完要跑 `sync-shared.js`） |
 
 想在本地跑起来或部署上线，完整步骤见 **[README-启动.md](README-启动.md)**，
 里面有两条路线：一条**不需要任何账号和服务端配置**，双击一个脚本就能玩；另一条是完整上线流程。

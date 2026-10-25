@@ -36,11 +36,12 @@
         </view>
       </scroll-view>
 
-      <view wx:if="{{constraints.length && constraints.length < activeCount}}" class="cs-cons">
-        <text class="cs-cons-tip">同字段合并后实际生效 {{constraints.length}} 条：</text>
+      <!-- 只要启用了条件就把实际生效的约束摆出来：人数变化必须能对着条件看 -->
+      <view wx:if="{{constraints.length}}" class="cs-cons">
+        <text class="cs-cons-tip">{{constraints.length < activeCount ? '已启用 ' + activeCount + ' 条，同字段合并后实际生效 ' + constraints.length + ' 条：' : '已启用 ' + activeCount + ' 条：'}}</text>
         <text wx:for="{{constraints}}" wx:key="key" class="cs-cons-item">{{item.label}}{{item.op}}{{item.text}}</text>
       </view>
-      <view wx:elif="{{!constraints.length}}" class="cs-cons">
+      <view wx:elif="{{!activeCount}}" class="cs-cons">
         <text class="cs-cons-tip">没有启用任何条件，下面是全部候选球员</text>
       </view>
     </view>
@@ -81,7 +82,14 @@
       </block>
 
       <view wx:else class="cs-empty">
-        <text>没有球员同时满足这些条件\n去掉一个条件再试试</text>
+        <block wx:if="{{poolEmpty}}">
+          <text>题库还没准备好</text>
+          <text>稍等一下再点这个标签</text>
+        </block>
+        <block wx:else>
+          <text>没有球员同时满足这些条件</text>
+          <text>去掉一个条件再试试</text>
+        </block>
       </view>
     </scroll-view>
 

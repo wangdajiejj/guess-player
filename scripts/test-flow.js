@@ -29,6 +29,7 @@ const FN = {
   gameGuess: require('../cloudfunctions/gameGuess/index.js').main,
   gameResume: require('../cloudfunctions/gameResume/index.js').main,
   gameResult: require('../cloudfunctions/gameResult/index.js').main,
+  gameReveal: require('../cloudfunctions/gameReveal/index.js').main,
   getPlayers: require('../cloudfunctions/getPlayers/index.js').main
 };
 
@@ -300,6 +301,167 @@ function keep(tag, res) {
   ok('两次开局 gameId 不同', e1.data.gameId !== e2.data.gameId);
   eq('无限模式开局成功', e1.data.status, 'playing');
   eq('已建 2 局', cloud.__store.games.filter(x => x._openid === 'u_endless').length, 2);
+
+  /* ---------------- 8b. 难度分档（star / normal / all，2026-10-25 起） ---------------- */
+  G('难度分档');
+  // 明星局答案必须 fame=5，标准局 fame>=4，全员局沿用 minFameEndless(=3)。
+  // 用「开局→查库里的 answerId」验证，答案 id 本来就在测试的假云数据库里。
+  async function answerOf(openid, difficulty) {
+    cloud.__setOpenid(openid);
+    const r = await FN.gameStart({ mode: 'endless', difficulty });
+    const g = cloud.__store.games.filter(x => x.gameId === r.data.gameId)[0];
+    return { fame: players.filter(p => p.id === g.answerId)[0].fame_level,
+             diff: r.data.difficulty };
+  }
+  const starAns = await answerOf('u_diff_star', 'star');
+  eq('明星局回显 difficulty=star', starAns.diff, 'star');
+  eq(`明星局答案 fame=5（实际 ${starAns.fame}）`, starAns.fame, 5);
+  const normAns = await answerOf('u_diff_normal', 'normal');
+  eq('标准局回显 difficulty=normal', normAns.diff, 'normal');
+  ok(`标准局答案 fame>=4（实际 ${normAns.fame}）`, normAns.fame >= 4);
+  const allAns = await answerOf('u_diff_all', 'all');
+  eq('全员局回显 difficulty=all', allAns.diff, 'all');
+  ok(`全员局答案可含 fame=3（池 ${POOL.length} 人）`, allAns.fame >= C.MIN_FAME);
+  const legacyAns = await answerOf('u_diff_legacy', undefined);
+  eq('不传 difficulty = 老行为（回显空）', legacyAns.diff, '');
+  // 明星局统计上确实更严：40 局全部 fame=5
+  let allStar = true;
+  for (let i = 0; i < 40; i++) {
+    const a = await answerOf('u_diff_star_' + i, 'star');
+    if (a.fame !== 5) { allStar = false; break; }
+  }
+  ok('明星局连开 40 局，答案全部 fame=5', allStar);
+
+  /* ---------------- 8c. 反向猜球（mode = reveal，2026-10-25 新玩法） ---------------- */
+  G('反向猜球');
+  cloud.__setOpenid('u_reveal');
+  const REVEAL_BUCKET = [];
+  const MAIN_BUCKET = SNAPSHOTS;   // 切走前先留引用，段末切回来做全局泄露扫描
+  useBucket(REVEAL_BUCKET);
+
+  const rv1 = keep('rv-start', await FN.gameStart({ mode: 'reveal' }));
+  ok('反向开局成功', rv1.ok && rv1.data.status === 'playing', rv1);
+  eq('开局自动揭 1 条', rv1.data.revealed, 1);
+  eq('第一条是国籍', (rv1.data.clues || [])[0] && rv1.data.clues[0].key, 'nationality');
+  ok('开局线索不带答案姓名', JSON.stringify(rv1.data.clues || []).indexOf('name') === -1);
+  const rvGame = cloud.__store.games.filter(x => x.gameId === rv1.data.gameId)[0];
+  ok('开局响应不含 answerId', JSON.stringify(rv1).indexOf('answerId') === -1);
+
+  const rv2 = keep('rv-reveal2', await FN.gameReveal({ gameId: rv1.data.gameId }));
+  eq('揭到 2 条', rv2.data.revealed, 2);
+  eq('第二条是联赛', rv2.data.clues[1].key, 'league');
+  eq('2 条时满分 700', rv2.data.maxScore, 700);
+
+  for (let i = 0; i < 6; i++) await FN.gameReveal({ gameId: rv1.data.gameId });
+  const rv8 = keep('rv-reveal8', await FN.gameReveal({ gameId: rv1.data.gameId }));
+  eq('揭满后幂等（仍是 8 条）', rv8.data.revealed, 8);
+  eq('8 条时满分 100', rv8.data.maxScore, 100);
+  eq('线索共 8 条', rv8.data.clues.length, 8);
+  eq('末条是惯用脚', rv8.data.clues[7].key, 'preferred_foot');
+
+  // 猜错：不带 verdict（8 行比对会白送答案相对信息），只回被猜球员本体
+  const rvAnswerId = rvGame.answerId;
+  const wrongP = POOL.filter(p => p.id !== rvAnswerId)[0];
+  const rw1 = keep('rv-wrong', await FN.gameGuess({ gameId: rv1.data.gameId, playerId: wrongP.id }));
+  ok('猜错未命中', rw1.ok && rw1.data.hit === false, rw1);
+  ok('猜错响应 verdict 为空', !rw1.data.verdict, rw1.data.verdict);
+  ok('猜错响应带回被猜球员', rw1.data.player && rw1.data.player.id === wrongP.id);
+  eq('消耗 1 次机会', rw1.data.used, 1);
+  eq('猜错不得分', rw1.data.score, 0);
+
+  const rw2 = await FN.gameGuess({ gameId: rv1.data.gameId, playerId: wrongP.id });
+  eq('重复猜测 1005', rw2.code, C.CODE.DUPLICATE_GUESS);
+
+  // 续局：线索与已猜名单原样重放，无 verdict
+  const rsm = keep('rv-resume', await FN.gameResume({ gameId: rv1.data.gameId }));
+  eq('续局线索 8 条', rsm.data.clues.length, 8);
+  eq('续局回放 1 行', rsm.data.rows.length, 1);
+  ok('续局回放行无 verdict', !rsm.data.rows[0].verdict);
+
+  // 新局：揭 3 条后直接猜答案 -> 600 分
+  cloud.__setOpenid('u_reveal_win');
+  const w1 = keep('rv-win-start', await FN.gameStart({ mode: 'reveal', difficulty: 'star' }));
+  const wGame = cloud.__store.games.filter(x => x.gameId === w1.data.gameId)[0];
+  const wAns = players.filter(p => p.id === wGame.answerId)[0];
+  ok('反向明星局答案 fame=5（难度档生效）', wAns.fame_level === 5, wAns.fame_level);
+  await FN.gameReveal({ gameId: w1.data.gameId });
+  await FN.gameReveal({ gameId: w1.data.gameId });
+  const w2 = keep('rv-win-guess', await FN.gameGuess({ gameId: w1.data.gameId, playerId: wGame.answerId }));
+  eq('3 条线索猜中', w2.data.status, 'won');
+  eq('得分 = (9-3)×100', w2.data.score, 600);
+
+  const wRevealAfter = await FN.gameReveal({ gameId: w1.data.gameId });
+  eq('终局后再揭 1004', wRevealAfter.code, C.CODE.GAME_FINISHED);
+  const wGuessAfter = await FN.gameGuess({ gameId: w1.data.gameId, playerId: wrongP.id });
+  eq('终局后再猜 1004', wGuessAfter.code, C.CODE.GAME_FINISHED);
+
+  const wRes = keep('rv-result', await FN.gameResult({ gameId: w1.data.gameId }));
+  eq('揭晓答案正确', wRes.data.answer.id, wGame.answerId);
+  eq('揭晓带 revealed=3', wRes.data.revealed, 3);
+
+  // 对非反向对局调 gameReveal -> 1001（用自己名下的常规对局，避免先撞越权 1003）
+  const plain = await FN.gameStart({ mode: 'endless' });
+  const badReveal = await FN.gameReveal({ gameId: plain.data.gameId });
+  eq('非反向对局 1001', badReveal.code, C.CODE.INVALID_PARAM);
+
+  // 零泄露扫描：本段全部响应快照里不得出现 answerId 字样
+  const rvLeaked = REVEAL_BUCKET.filter(s => s.json.indexOf('answerId') !== -1);
+  eq('反向模式响应均无 answerId 字段', rvLeaked.length, 0);
+  useBucket(MAIN_BUCKET);
+
+  /* ---------------- 8d. 专题练习（theme，2026-10-25） ---------------- */
+  G('专题练习');
+  // 客户端 miniprogram/utils/themes.js 与服务端 THEMES 逐主题对拍（label + 过滤口径）
+  const clientThemes = require('../miniprogram/utils/themes.js');
+  const THEME_COUNTS = [];
+  clientThemes.THEMES.forEach(ct => {
+    const st = C.THEMES[ct.id];
+    ok(`主题表对拍 ${ct.label}`, !!st && st.label === ct.label, { id: ct.id, server: st && st.label });
+    const serverN = POOL.filter(p => U.themeFilter(p, st)).length;
+    const clientN = POOL.filter(p => clientThemes.testOf(ct, p)).length;
+    eq(`主题池人数对拍 ${ct.label}`, clientN, serverN);
+    THEME_COUNTS.push(clientN);
+  });
+  ok('每个主题池都 >= 20 人（够抽不重复）', THEME_COUNTS.every(n => n >= 20), THEME_COUNTS);
+
+  async function themeAnswer(openid, event) {
+    cloud.__setOpenid(openid);
+    const r = await FN.gameStart(event);
+    if (!r.ok) return { err: r };
+    const g = cloud.__store.games.filter(x => x.gameId === r.data.gameId)[0];
+    return { ans: players.filter(p => p.id === g.answerId)[0], res: r };
+  }
+
+  const tEpl = await themeAnswer('u_theme_epl', { mode: 'endless', theme: 'epl' });
+  ok('英超专场答案在英超', tEpl.ans.league === '英超', tEpl.ans.name_cn);
+  eq('响应回显 theme=epl', tEpl.res.data.theme, 'epl');
+
+  const tLeg = await themeAnswer('u_theme_leg', { mode: 'endless', theme: 'legends' });
+  ok('退役传奇答案 active=false', tLeg.ans.active === false, tLeg.ans.name_cn);
+  const tGk = await themeAnswer('u_theme_gk', { mode: 'endless', theme: 'gk' });
+  ok('门将专场答案是门将', tGk.ans.position_group === 'GK', tGk.ans.position);
+  const tLeft = await themeAnswer('u_theme_left', { mode: 'endless', theme: 'lefty' });
+  ok('左脚将答案惯用左脚', tLeft.ans.preferred_foot === '左脚', tLeft.ans.name_cn);
+  const tGenz = await themeAnswer('u_theme_genz', { mode: 'endless', theme: 'genz' });
+  ok('00后新星答案生于 2000 年及以后',
+    Number(String(tGenz.ans.birth_date).slice(0, 4)) >= 2000, tGenz.ans.birth_date);
+  const tBra = await themeAnswer('u_theme_bra', { mode: 'endless', theme: 'brazil' });
+  ok('巴西球员答案国籍巴西', tBra.ans.nationality === '巴西', tBra.ans.name_cn);
+
+  // 主题 + 难度：难度档被忽略（全员池再切主题），主题仍然生效
+  let allEpl = true;
+  for (let i = 0; i < 12; i++) {
+    const t = await themeAnswer('u_theme_mix' + i, { mode: 'endless', theme: 'epl', difficulty: 'star' });
+    if (t.err || t.ans.league !== '英超') { allEpl = false; break; }
+  }
+  ok('专题+难度连开 12 局，答案全部在英超（难度被忽略）', allEpl);
+
+  // 非法主题 / daily 带主题 -> 1001
+  const badTheme = await FN.gameStart({ mode: 'endless', theme: 'nope' });
+  eq('未知专题 1001', badTheme.code, C.CODE.INVALID_PARAM);
+  cloud.__setOpenid('u_theme_daily');
+  const dailyTheme = await FN.gameStart({ mode: 'daily', theme: 'epl' });
+  eq('每日一题带专题 1001', dailyTheme.code, C.CODE.INVALID_PARAM);
 
   /* ---------------- 9. 错误码 ---------------- */
   G('错误码');

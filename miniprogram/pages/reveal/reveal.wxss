@@ -1,0 +1,283 @@
+/**
+ * 反向猜球 —— 视觉与游戏页同一套语言（深绿顶栏 + 球场底纹），
+ * 线索槽用「档案卡」隐喻：锁着的是待揭晓的第 N 条。
+ */
+.reveal {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background:
+    radial-gradient(circle at 50% 22%, var(--gp-glow) 0%, rgba(255, 255, 255, 0) 26%),
+    radial-gradient(circle at 50% 22%, transparent 0%, transparent 110rpx, rgba(12, 92, 59, 0.05) 111rpx, rgba(12, 92, 59, 0.05) 114rpx, transparent 115rpx),
+    linear-gradient(180deg, var(--gp-bg-top) 0%, var(--gp-bg) 30%);
+}
+
+/* ---------- 顶栏 ---------- */
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 22rpx 32rpx 18rpx;
+  background: linear-gradient(135deg, #0c5c3b 0%, #148053 100%);
+  color: #fff;
+}
+
+.tb-title {
+  font-size: 34rpx;
+  font-weight: 600;
+  color: #fff;
+}
+
+.tb-sub {
+  font-size: 22rpx;
+  color: rgba(255, 255, 255, 0.72);
+  margin-top: 4rpx;
+}
+
+.tb-right { text-align: right; }
+
+.tb-num {
+  font-size: 52rpx;
+  font-weight: 700;
+  color: #ffd76a;
+  line-height: 1.1;
+}
+
+.tb-num-danger {
+  color: #ff8f6b;
+}
+
+.tb-label {
+  font-size: 20rpx;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+/* ---------- 机会行 ---------- */
+
+.chance-bar {
+  display: flex;
+  justify-content: space-between;
+  padding: 14rpx 32rpx;
+  background: #0c5c3b;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 24rpx;
+}
+
+/* ---------- 主体 ---------- */
+
+.body {
+  flex: 1;
+  overflow: hidden;
+  padding: 20rpx 28rpx 0;
+}
+
+.gp-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 120rpx 60rpx;
+  gap: 20rpx;
+  text-align: center;
+}
+
+.spinner {
+  width: 48rpx;
+  height: 48rpx;
+  border: 4rpx solid var(--gp-holder);
+  border-top-color: var(--gp-main);
+  border-radius: 50%;
+  animation: rv-spin 0.8s linear infinite;
+}
+
+@keyframes rv-spin { to { transform: rotate(360deg); } }
+
+/* ---------- 开局骨架：8 个待揭晓的线索槽 ---------- */
+
+.sk-slots {
+  background: var(--gp-card);
+  border-radius: 16rpx;
+  padding: 22rpx 22rpx 8rpx;
+}
+
+.sk-slot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14rpx;
+}
+
+.sk-slot-label {
+  width: 110rpx;
+  height: 26rpx;
+  border-radius: 8rpx;
+}
+
+.sk-slot-bar {
+  width: 190rpx;
+  height: 34rpx;
+  border-radius: 10rpx;
+}
+
+.sk-slot:nth-child(odd) .sk::after { animation-delay: 0.2s; }
+
+.sk-note {
+  text-align: center;
+  padding: 16rpx 0 24rpx;
+  font-size: 24rpx;
+}
+
+.btn-retry {
+  width: 240rpx;
+  height: 72rpx;
+  font-size: 28rpx;
+}
+
+/* ---------- 线索槽 ---------- */
+
+.clue-board {
+  padding: 22rpx 22rpx 14rpx;
+  animation: board-in 0.35s ease-out;
+}
+
+@keyframes board-in {
+  from { opacity: 0; transform: translateY(20rpx); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.slot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20rpx 24rpx;
+  margin-bottom: 14rpx;
+  border-radius: 14rpx;
+  border: 2rpx solid transparent;
+  animation: slot-pop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@keyframes slot-pop {
+  from { opacity: 0; transform: scale(0.94); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+.slot-open {
+  background: var(--gp-green-bg, #eaf3e6);
+  border-color: var(--gp-green-dark);
+}
+
+.slot-locked {
+  background: var(--gp-field);
+  border: 2rpx dashed var(--gp-divider);
+}
+
+.slot-press { transform: scale(0.98); opacity: 0.85; }
+
+.slot-label {
+  font-size: 26rpx;
+  color: var(--gp-text-sub);
+}
+
+.slot-open .slot-label {
+  color: var(--gp-green-dark);
+  font-weight: 600;
+}
+
+.slot-value {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: var(--gp-text);
+}
+
+.slot-locked-txt {
+  font-size: 24rpx;
+  color: var(--gp-text-mute);
+}
+
+.board-tip {
+  text-align: center;
+  font-size: 22rpx;
+  color: var(--gp-text-mute);
+  padding: 4rpx 0 8rpx;
+}
+
+/* ---------- 揭晓按钮 ---------- */
+
+.btn-reveal {
+  height: 88rpx;
+  margin-top: 6rpx;
+  font-size: 30rpx;
+  color: #7a5c00;
+  background: linear-gradient(135deg, #ffd76a 0%, #f2c94c 100%);
+  box-shadow: 0 8rpx 20rpx rgba(210, 170, 40, 0.28);
+  border-radius: 44rpx;
+}
+
+.btn-reveal-off {
+  color: var(--gp-text-mute);
+  background: var(--gp-field);
+  box-shadow: none;
+}
+
+.btn-press {
+  transform: scale(0.97);
+  opacity: 0.9;
+}
+
+/* ---------- 已猜名单 ---------- */
+
+.guess-list {
+  margin-top: 20rpx;
+  padding: 22rpx 24rpx;
+}
+
+.gl-title {
+  font-size: 26rpx;
+  font-weight: 500;
+  margin-bottom: 14rpx;
+}
+
+.gl-chips {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.gl-chip {
+  padding: 8rpx 18rpx;
+  margin: 0 12rpx 12rpx 0;
+  border-radius: 10rpx;
+  background: var(--gp-gray-bg, #eeefee);
+  color: var(--gp-gray-dark, #4a4d4f);
+  font-size: 24rpx;
+  animation: slot-pop 0.25s ease-out both;
+}
+
+.finish-tip {
+  text-align: center;
+  padding: 40rpx 0 20rpx;
+  font-size: 28rpx;
+  font-weight: 500;
+  color: var(--gp-main, #0c5c3b);
+}
+
+.safe-gap { height: 40rpx; }
+
+/* ---------- 底部 ---------- */
+
+.bottom {
+  padding: 16rpx 28rpx calc(20rpx + env(safe-area-inset-bottom));
+  background: var(--gp-card);
+  border-top: 1rpx solid var(--gp-line);
+}
+
+.btn-cta {
+  height: 96rpx;
+  font-size: 34rpx;
+  background: linear-gradient(135deg, #0c5c3b 0%, #148053 60%, #1c9a63 100%);
+  box-shadow: 0 10rpx 24rpx rgba(12, 92, 59, 0.24);
+}
+
+.btn-cta.gp-btn-disabled {
+  background: var(--gp-disabled);
+  box-shadow: none;
+}

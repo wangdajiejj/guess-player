@@ -2,18 +2,21 @@
   "pages": [
     "pages/index/index",
     "pages/game/game",
+    "pages/reveal/reveal",
     "pages/result/result",
     "pages/help/help",
     "pages/settings/settings"
   ],
   "window": {
     "navigationBarTitleText": "猜球员",
-    "navigationBarBackgroundColor": "#0C5C3B",
-    "navigationBarTextStyle": "white",
-    "backgroundColor": "#F4F6F4",
-    "backgroundTextStyle": "dark",
+    "navigationBarBackgroundColor": "@navBg",
+    "navigationBarTextStyle": "@navTxt",
+    "backgroundColor": "@pageBg",
+    "backgroundTextStyle": "@bgTxt",
     "enablePullDownRefresh": false
   },
+  "darkmode": true,
+  "themeLocation": "theme.json",
   "style": "v2",
   "sitemapLocation": "sitemap.json",
   "lazyCodeLoading": "requiredComponents",

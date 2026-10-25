@@ -33,15 +33,57 @@
 
 /* ---------------- 结果横幅 ---------------- */
 
+.banner-wrap {
+  position: relative;
+  overflow: visible;
+}
+
 .banner {
   padding: 40rpx 32rpx 44rpx;
   border-radius: 20rpx;
   text-align: center;
   color: #fff;
+  animation: banner-pop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
 
-.banner-won { background: linear-gradient(135deg, #148053, #0c5c3b); }
+@keyframes banner-pop {
+  from { opacity: 0; transform: scale(0.86) translateY(20rpx); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.banner-won { background: linear-gradient(135deg, #1c9a63, #0c5c3b 70%); }
 .banner-lost { background: linear-gradient(135deg, #b0903c, #8a7a26); }
+
+/* 猜中时的彩带：12 条错峰落下，颜色从题库三态色取 */
+.confetti {
+  position: absolute;
+  top: -20rpx;
+  width: 14rpx;
+  height: 26rpx;
+  border-radius: 4rpx;
+  opacity: 0;
+  animation: confetti-fall 1.8s ease-in 0.15s both;
+}
+
+@keyframes confetti-fall {
+  0%   { opacity: 0; transform: translateY(0) rotate(0deg); }
+  12%  { opacity: 1; }
+  85%  { opacity: 1; }
+  100% { opacity: 0; transform: translateY(560rpx) rotate(520deg); }
+}
+
+.c1  { left: 8%;  background: #ffd76a; animation-delay: 0.10s; }
+.c2  { left: 16%; background: #6aaa64; animation-delay: 0.35s; }
+.c3  { left: 24%; background: #c9b458; animation-delay: 0.18s; }
+.c4  { left: 32%; background: #7ec8e3; animation-delay: 0.50s; }
+.c5  { left: 40%; background: #ffd76a; animation-delay: 0.26s; }
+.c6  { left: 48%; background: #6aaa64; animation-delay: 0.62s; }
+.c7  { left: 56%; background: #e8845e; animation-delay: 0.14s; }
+.c8  { left: 64%; background: #c9b458; animation-delay: 0.42s; }
+.c9  { left: 72%; background: #ffd76a; animation-delay: 0.55s; }
+.c10 { left: 80%; background: #6aaa64; animation-delay: 0.22s; }
+.c11 { left: 88%; background: #7ec8e3; animation-delay: 0.48s; }
+.c12 { left: 94%; background: #e8845e; animation-delay: 0.33s; }
 
 .bn-title {
   font-size: 34rpx;
@@ -68,6 +110,21 @@
   padding: 8rpx 24rpx;
   border-radius: 24rpx;
   background: rgba(255, 255, 255, 0.18);
+  font-size: 24rpx;
+}
+
+/* 反向猜球的回放：名字名单（无 verdict 色块） */
+.rv-replay {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.rv-replay-chip {
+  padding: 8rpx 18rpx;
+  margin: 0 12rpx 12rpx 0;
+  border-radius: 10rpx;
+  background: var(--gp-gray-bg, #eeefee);
+  color: var(--gp-gray-dark, #4a4d4f);
   font-size: 24rpx;
 }
 
@@ -117,8 +174,8 @@
 }
 
 .tag-legend {
-  background: #fdf3d8;
-  color: #8a7a26;
+  background: var(--gp-amber-bg);
+  color: var(--gp-amber-dark);
 }
 
 .tag-plain {

@@ -224,7 +224,7 @@
 ### 3.4 `meta`
 
 ```json
-{ "_id": "players_meta", "playerVersion": "2026-10-10", "playerCount": 200, "updatedAt": 1791676800000 }
+{ "_id": "players_meta", "playerVersion": "2026-10-25", "playerCount": 548, "updatedAt": 1791676800000 }
 { "_id": "daily_salt",    "salt": "GP2026v1", "note": "更换会导致历史每日答案错位，禁止随意改" }
 { "_id": "answer_pool",   "minFame": 3, "activeOnly": false, "excludedIds": [] }
 ```

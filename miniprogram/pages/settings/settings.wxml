@@ -36,6 +36,23 @@
     </view>
   </view>
 
+  <!-- 外观 -->
+  <view class="sec">
+    <view class="sec-title">外观</view>
+    <view class="sec-card gp-card">
+      <view class="cell">
+        <view class="cell-body">
+          <view class="cell-name">深色模式</view>
+          <view class="cell-desc gp-sub">跟随系统显示设置自动切换</view>
+        </view>
+        <view class="cell-value">跟随系统</view>
+      </view>
+    </view>
+    <view class="sec-note">
+      在系统的显示设置里切换深浅色即可，页面配色会全部自动适配。
+    </view>
+  </view>
+
   <!-- 数据 -->
   <view class="sec">
     <view class="sec-title">数据</view>

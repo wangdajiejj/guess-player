@@ -1,6 +1,9 @@
 <view class="home">
   <view class="hero">
-    <view class="hero-logo">⚽</view>
+    <view class="hero-ball-wrap">
+      <view class="hero-ring"></view>
+      <view class="hero-logo">⚽</view>
+    </view>
     <view class="hero-title">猜球员</view>
     <view class="hero-sub">{{heroSub}}</view>
   </view>
@@ -8,7 +11,10 @@
   <!-- 每日一题 -->
   <view class="card card-daily">
     <view class="card-head">
-      <text class="card-title">每日一题</text>
+      <view class="card-title-wrap">
+        <text class="card-icon">📅</text>
+        <text class="card-title">每日一题</text>
+      </view>
       <text class="card-date gp-sub">{{today}}</text>
     </view>
 
@@ -19,11 +25,11 @@
 
       <block wx:elif="{{dailyStatus === 'playing'}}">
         <view class="row-state">
-          <text wx:if="{{dailyUsed === 0}}">今天还没开始，等你来战</text>
+          <text wx:if="{{dailyUsed === 0}}">今天还没开始，等你来猜</text>
           <text wx:else>已猜 {{dailyUsed}} 次，还剩 {{dailyRemaining}} 次</text>
         </view>
-        <button class="gp-btn gp-btn-primary card-btn" bindtap="startDaily">
-          {{dailyUsed === 0 ? '开始今日挑战' : '继续今日挑战'}}
+        <button class="gp-btn gp-btn-primary card-btn btn-glow" hover-class="btn-press" bindtap="startDaily">
+          {{dailyUsed === 0 ? '开始今日一题' : '继续今日一题'}}
         </button>
       </block>
 
@@ -32,7 +38,7 @@
           <text class="result-badge win">猜中了</text>
           <text>{{dailyUsed}}/{{dailyMax}} 次</text>
         </view>
-        <button class="gp-btn gp-btn-ghost card-btn" bindtap="viewDailyResult">查看今日题目</button>
+        <button class="gp-btn gp-btn-ghost card-btn" hover-class="btn-press" bindtap="viewDailyResult">查看今日题目</button>
       </block>
 
       <block wx:elif="{{dailyStatus === 'lost'}}">
@@ -40,13 +46,13 @@
           <text class="result-badge lose">没猜到</text>
           <text>机会用完了</text>
         </view>
-        <button class="gp-btn gp-btn-ghost card-btn" bindtap="viewDailyResult">看看今天是谁</button>
+        <button class="gp-btn gp-btn-ghost card-btn" hover-class="btn-press" bindtap="viewDailyResult">看看今天是谁</button>
       </block>
 
       <block wx:else>
         <!-- 失败原因由 api.js 翻译过：直接说该去改哪儿，不写「加载失败」这种废话 -->
         <view class="row-state gp-sub">{{dailyErr || '今天的状态没能加载出来'}}</view>
-        <button class="gp-btn gp-btn-ghost card-btn" bindtap="refreshDaily">重试</button>
+        <button class="gp-btn gp-btn-ghost card-btn" hover-class="btn-press" bindtap="refreshDaily">重试</button>
       </block>
     </view>
   </view>
@@ -54,24 +60,101 @@
   <!-- 上一局未完成的无限模式 -->
   <view wx:if="{{pendingGameId}}" class="card card-pending">
     <view class="card-head">
-      <text class="card-title">还有一局没打完</text>
+      <view class="card-title-wrap">
+        <text class="card-icon">⏳</text>
+        <text class="card-title">还有一局没猜完</text>
+      </view>
     </view>
     <view class="card-body">
       <view class="row-state gp-sub">自由练习 · 已猜 {{pendingUsed}} 次</view>
-      <button class="gp-btn gp-btn-ghost card-btn" bindtap="resumePending">接着打</button>
+      <button class="gp-btn gp-btn-ghost card-btn" hover-class="btn-press" bindtap="resumePending">接着猜</button>
     </view>
   </view>
 
-  <!-- 无限模式 -->
-  <view class="card">
+  <!-- 自由练习：按知名度选难度 -->
+  <view class="card card-endless">
     <view class="card-head">
-      <text class="card-title">自由练习</text>
+      <view class="card-title-wrap">
+        <text class="card-icon">⚡</text>
+        <text class="card-title">自由练习</text>
+      </view>
       <text class="card-date gp-sub">不限次数</text>
     </view>
     <view class="card-body">
-      <view class="row-state gp-sub">随机出一题，想来几局来几局</view>
-      <button class="gp-btn gp-btn-primary card-btn" bindtap="startEndless">开始新一局</button>
+      <view class="row-state gp-sub">按球员知名度选一档，随机开局</view>
+      <view class="diff-grid">
+        <view class="diff-item diff-star" hover-class="diff-press" data-diff="star" bindtap="startEndless">
+          <view class="diff-name">明星局</view>
+          <view class="diff-stars">⭐⭐⭐</view>
+          <view class="diff-count">{{diffCounts ? diffCounts.star + ' 人' : '只抽巨星'}}</view>
+        </view>
+        <view class="diff-item diff-normal" hover-class="diff-press" data-diff="normal" bindtap="startEndless">
+          <view class="diff-name">标准局</view>
+          <view class="diff-stars">⭐⭐</view>
+          <view class="diff-count">{{diffCounts ? diffCounts.normal + ' 人' : '知名球员'}}</view>
+        </view>
+        <view class="diff-item diff-all" hover-class="diff-press" data-diff="all" bindtap="startEndless">
+          <view class="diff-name">全员局</view>
+          <view class="diff-stars">⭐</view>
+          <view class="diff-count">{{diffCounts ? diffCounts.all + ' 人' : '含冷门球员'}}</view>
+        </view>
+      </view>
     </view>
+  </view>
+
+  <!-- 反向猜球：先给线索，越早猜中分越高 -->
+  <view class="card card-reveal">
+    <view class="card-head">
+      <view class="card-title-wrap">
+        <text class="card-icon">🔍</text>
+        <text class="card-title">反向猜球</text>
+      </view>
+      <text class="card-date gp-sub">新玩法</text>
+    </view>
+    <view class="card-body">
+      <view class="row-state gp-sub">反过来：一条条揭开答案的资料，越早猜中分越高</view>
+      <view class="diff-grid diff-grid-reveal">
+        <view class="diff-item diff-star" hover-class="diff-press" data-diff="star" bindtap="startReveal">
+          <view class="diff-name">明星局</view>
+          <view class="diff-stars">⭐⭐⭐</view>
+        </view>
+        <view class="diff-item diff-normal" hover-class="diff-press" data-diff="normal" bindtap="startReveal">
+          <view class="diff-name">标准局</view>
+          <view class="diff-stars">⭐⭐</view>
+        </view>
+        <view class="diff-item diff-all" hover-class="diff-press" data-diff="all" bindtap="startReveal">
+          <view class="diff-name">全员局</view>
+          <view class="diff-stars">⭐</view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 专题练习：横向滚动的主题条 -->
+  <view class="card card-themes">
+    <view class="card-head">
+      <view class="card-title-wrap">
+        <text class="card-icon">🎯</text>
+        <text class="card-title">专题练习</text>
+      </view>
+      <text class="card-date gp-sub">按主题开局</text>
+    </view>
+    <scroll-view class="theme-scroll" scroll-x enhanced show-scrollbar="{{false}}">
+      <view class="theme-row">
+        <view
+          wx:for="{{themeList}}"
+          wx:key="id"
+          class="theme-chip"
+          hover-class="theme-press"
+          data-theme="{{item.id}}"
+          bindtap="startTheme"
+        >
+          <view class="theme-name">{{item.label}}</view>
+          <view class="theme-count">{{item.count ? item.count + ' 人' : '—'}}</view>
+        </view>
+        <view class="theme-row-pad"></view>
+      </view>
+    </scroll-view>
   </view>
 
   <!-- 本地战绩 -->
@@ -85,8 +168,8 @@
       <view class="stat-label">胜率</view>
     </view>
     <view class="stat-item">
-      <view class="stat-num">{{stats.streak}}</view>
-      <view class="stat-label">当前连胜</view>
+      <view class="stat-num stat-fire">{{stats.streak}}</view>
+      <view class="stat-label">{{stats.streak > 0 ? '🔥 连胜中' : '当前连胜'}}</view>
     </view>
     <view class="stat-item">
       <view class="stat-num">{{stats.bestStreak}}</view>

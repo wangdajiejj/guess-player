@@ -37,16 +37,17 @@ exports.main = async (event = {}) => {
     const detail = U.pickFields(answer, C.DETAIL_FIELDS);
     detail.age = require('./compare').calcAge(answer.birth_date, dateKey);
 
-    return U.ok({
+    return U.ok(Object.assign({
       gameId: game.gameId,
       mode: game.mode,
+      difficulty: game.difficulty || '',
       dateKey,
       status: game.status,
       used: (game.guessIds || []).length,
       score: game.score || 0,
       rows,
       answer: detail
-    });
+    }, game.mode === 'reveal' ? { revealed: game.revealed || 1 } : {}));
   } catch (e) {
     console.error('[gameResult]', e);
     return U.fail(C.CODE.INTERNAL, e.message);

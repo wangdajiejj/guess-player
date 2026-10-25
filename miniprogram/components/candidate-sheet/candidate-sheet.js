@@ -86,7 +86,9 @@ Component({
     list: [],
     total: 0,
     /** 被截断没渲染的人数，0 = 全部渲染了 */
-    hidden: 0
+    hidden: 0,
+    /** 候选池还没到（网络慢/首拉失败）——空列表时要说明，别让人以为真筛没了 */
+    poolEmpty: false
   },
 
   methods: {
@@ -94,13 +96,21 @@ Component({
 
     _onPanel(v) {
       if (!v) {
-        this.setData({ clues: [], active: [], cluesView: [], constraints: [], activeCount: 0, list: [], total: 0, hidden: 0 });
+        this.setData({ clues: [], active: [], cluesView: [], constraints: [], activeCount: 0, list: [], total: 0, hidden: 0, poolEmpty: false });
         return;
       }
-      this.setData({
-        clues: v.clues || [],
-        active: (v.initial || []).slice()
-      }, () => this._rebuild());
+      // 跨行去重（同字段同值同判定只留一条），初始条件若指着被合并掉的重复项要换到代表 id
+      const { clues, idRemap } = clueUtil.dedupeClues(v.clues || []);
+      const active = [];
+      (v.initial || []).forEach(id => {
+        const rep = idRemap[id];
+        if (rep && active.indexOf(rep) === -1) active.push(rep);
+      });
+
+      // setData 后逻辑层 data 立即更新，直接同步重算；
+      // 不走 setData 回调——回调在部分生命周期阶段可能不触发，会把面板卡在空数据上
+      this.setData({ clues, active });
+      this._rebuild();
     },
 
     /** 候选池变了就重算（幂等，多次触发也没关系） */
@@ -139,7 +149,8 @@ Component({
         activeCount: picked.length,
         list: ordered.slice(0, RENDER_CAP).map(decorate),
         total: hit.length,
-        hidden: Math.max(0, ordered.length - RENDER_CAP)
+        hidden: Math.max(0, ordered.length - RENDER_CAP),
+        poolEmpty: !this.properties.players.length
       });
     },
 
@@ -149,17 +160,20 @@ Component({
       const i = active.indexOf(id);
       if (i === -1) active.push(id); else active.splice(i, 1);
       sfx.play('tap');
-      this.setData({ active }, () => this._rebuild());
+      this.setData({ active });
+      this._rebuild();
     },
 
     onAll() {
       sfx.play('tap');
-      this.setData({ active: (this.data.clues || []).map(c => c.id) }, () => this._rebuild());
+      this.setData({ active: (this.data.clues || []).map(c => c.id) });
+      this._rebuild();
     },
 
     onNone() {
       sfx.play('tap');
-      this.setData({ active: [] }, () => this._rebuild());
+      this.setData({ active: [] });
+      this._rebuild();
     },
 
     onClose() {

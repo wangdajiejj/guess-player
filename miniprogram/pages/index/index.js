@@ -2,6 +2,7 @@ const api = require('../../utils/api.js');
 const S = require('../../utils/storage.js');
 const { beijingDateKey } = require('../../utils/age.js');
 const sfx = require('../../utils/sfx.js');
+const themes = require('../../utils/themes.js');
 
 Page({
   data: {
@@ -17,6 +18,8 @@ Page({
     stats: { played: 0, won: 0, streak: 0, bestStreak: 0, dist: [0, 0, 0, 0, 0, 0, 0, 0] },
     winRate: 0,
     maxDist: 1,
+    diffCounts: null,
+    themeList: [],
     // 题库规模从本地缓存里读，不写死 —— 扩池后自动跟着变
     // （曾经在 wxml 里硬编码「200 名」，扩到 500 后文案没跟上，属于会静默漂移的坑）
     heroSub: '8 次机会，找出今天的答案球员'
@@ -34,14 +37,26 @@ Page({
     this.loadPoolCount();
   },
 
-  /** 首页副标题里的球员人数：读本地缓存，拿不到就退化成不带数字的说法 */
+  /** 首页副标题里的球员人数 + 各难度档/专题人数：读本地缓存，拿不到就退化成不带数字的说法 */
   loadPoolCount() {
-    let n = 0;
-    try { n = (S.loadPlayers() || []).length; } catch (e) { n = 0; }
+    let list = [];
+    try { list = S.loadPlayers() || []; } catch (e) { list = []; }
+    const n = list.length;
+    // 旧缓存没有 fame_level 字段（2026-10-25 起候选包才带上），此时不显示分档人数
+    const withFame = n > 0 && list[0].fame_level != null;
+    const themeCounts = withFame ? themes.countAll(list) : null;
     this.setData({
       heroSub: n > 0
         ? '8 次机会，从 ' + n + ' 名球员里找出答案'
-        : '8 次机会，找出今天的答案球员'
+        : '8 次机会，找出今天的答案球员',
+      diffCounts: withFame ? {
+        star: list.filter(p => p.fame_level >= 5).length,
+        normal: list.filter(p => p.fame_level >= 4).length,
+        all: n
+      } : null,
+      themeList: themes.THEMES.map(t => ({
+        id: t.id, label: t.label, count: themeCounts ? themeCounts[t.id] : 0
+      }))
     });
   },
 
@@ -106,9 +121,26 @@ Page({
     wx.navigateTo({ url: '/pages/game/game?mode=daily' });
   },
 
-  startEndless() {
+  /** 按难度开一局自由练习：star=只抽巨星 / normal=知名 / all=含冷门 */
+  startEndless(e) {
+    const diff = (e && e.currentTarget && e.currentTarget.dataset.diff) || 'all';
     sfx.play('tap');
-    wx.navigateTo({ url: '/pages/game/game?mode=endless' });
+    wx.navigateTo({ url: '/pages/game/game?mode=endless&difficulty=' + diff });
+  },
+
+  /** 反向猜球：同样按难度分档开局 */
+  startReveal(e) {
+    const diff = (e && e.currentTarget && e.currentTarget.dataset.diff) || 'all';
+    sfx.play('tap');
+    wx.navigateTo({ url: '/pages/reveal/reveal?difficulty=' + diff });
+  },
+
+  /** 专题练习：从主题子池里随机开局 */
+  startTheme(e) {
+    const theme = e && e.currentTarget && e.currentTarget.dataset.theme;
+    if (!theme) return;
+    sfx.play('tap');
+    wx.navigateTo({ url: '/pages/game/game?mode=endless&theme=' + theme });
   },
 
   resumePending() {

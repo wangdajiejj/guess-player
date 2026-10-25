@@ -1,0 +1,7 @@
+{
+  "navigationBarTitleText": "反向猜球",
+  "usingComponents": {
+    "search-sheet": "/components/search-sheet/search-sheet",
+    "candidate-sheet": "/components/candidate-sheet/candidate-sheet"
+  }
+}

@@ -114,7 +114,7 @@
 
   <!-- 模式 -->
   <view class="sec">
-    <view class="sec-title">两种玩法</view>
+    <view class="sec-title">四种玩法</view>
     <view class="sec-card gp-card">
       <view class="mode-item">
         <view class="mode-name">每日一题</view>
@@ -126,8 +126,33 @@
       <view class="mode-item">
         <view class="mode-name">自由练习</view>
         <view class="mode-desc gp-sub">
-          随时开新一局，每次都是随机球员，没有次数上限。
-          中途退出可以回来接着猜。
+          随时开新一局，没有次数上限。中途退出可以回来接着猜。
+          开局前按球员知名度选难度：
+        </view>
+        <view class="mode-desc gp-sub mode-diff">
+          ⭐⭐⭐ <text class="hl">明星局</text>：只抽家喻户晓的巨星
+          ⭐⭐ <text class="hl">标准局</text>：知名球员（和每日一题同档）
+          ⭐ <text class="hl">全员局</text>：整个题库都可能出现，含冷门
+        </view>
+      </view>
+      <view class="mode-item">
+        <view class="mode-name">专题练习</view>
+        <view class="mode-desc gp-sub">
+          选一个主题开局：英超 / 西甲 / 意甲 / 德甲专场、退役传奇、
+          左脚将、门将专场、前锋专场、巴西 / 阿根廷 / 英格兰球员、00后新星。
+          主题池覆盖各个知名度档位，从巨星到冷门都可能出现。
+        </view>
+      </view>
+      <view class="mode-item">
+        <view class="mode-name">反向猜球</view>
+        <view class="mode-desc gp-sub">
+          反过来玩：系统一条条揭开答案的资料（国籍 → 联赛 → 俱乐部 → …），
+          你随时可以猜。揭晓得越少就猜中，得分越高：第 1 条就猜中 800 分，
+          8 条全开只剩 100 分。猜错不额外扣分，但会消耗 8 次机会之一。
+        </view>
+        <view class="mode-desc gp-sub mode-diff">
+          已揭开的线索同样<text class="hl">可以点</text>：点它会列出还符合这些条件的球员
+          （和常规模式的标签筛选同一套）。
         </view>
       </view>
     </view>

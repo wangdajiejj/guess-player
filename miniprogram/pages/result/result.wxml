@@ -15,11 +15,22 @@
   <block wx:else>
 
     <!-- 结果横幅 -->
-    <view class="banner {{won ? 'banner-won' : 'banner-lost'}}">
-      <view class="bn-title">{{won ? '猜中了！' : '很遗憾'}}</view>
-      <view class="bn-score">{{scoreText}}</view>
-      <view class="bn-sub">{{modeText}}</view>
-      <view wx:if="{{won}}" class="bn-badge">第 {{used}} 次就找到了</view>
+    <view class="banner-wrap">
+      <view class="banner {{won ? 'banner-won' : 'banner-lost'}}">
+        <view class="bn-title">{{won ? '猜中了！' : '很遗憾'}}</view>
+        <view class="bn-score">{{scoreText}}</view>
+        <view class="bn-sub">{{modeText}}</view>
+        <view wx:if="{{won}}" class="bn-badge">{{mode === 'reveal' ? '只用 ' + revealed + ' 条线索就锁定了' : '第 ' + used + ' 次就找到了'}}</view>
+      </view>
+      <!-- 猜中时的庆祝彩带：纯 CSS 动画，零素材 -->
+      <block wx:if="{{won}}">
+        <view class="confetti c1"></view><view class="confetti c2"></view>
+        <view class="confetti c3"></view><view class="confetti c4"></view>
+        <view class="confetti c5"></view><view class="confetti c6"></view>
+        <view class="confetti c7"></view><view class="confetti c8"></view>
+        <view class="confetti c9"></view><view class="confetti c10"></view>
+        <view class="confetti c11"></view><view class="confetti c12"></view>
+      </block>
     </view>
 
     <!-- 答案卡 -->
@@ -68,24 +79,32 @@
       <view class="tc-body">{{answer.meme}}</view>
     </view>
 
-    <!-- 猜测回放 -->
+    <!-- 猜测回放：常规模式铺线索卡；反向猜球没有 verdict，铺名字名单 -->
     <view class="rows-card gp-card" wx:if="{{rows.length}}">
-      <view class="rc-title">我的 {{rows.length}} 次猜测</view>
-      <clue-card
-        wx:for="{{rows}}"
-        wx:for-item="row"
-        wx:key="round"
-        row="{{row}}"
-      />
+      <block wx:if="{{mode === 'reveal'}}">
+        <view class="rc-title">我猜过的 {{rows.length}} 人</view>
+        <view class="rv-replay">
+          <view wx:for="{{rows}}" wx:key="round" class="rv-replay-chip">✗ {{item.player.name_cn}}</view>
+        </view>
+      </block>
+      <block wx:else>
+        <view class="rc-title">我的 {{rows.length}} 次猜测</view>
+        <clue-card
+          wx:for="{{rows}}"
+          wx:for-item="row"
+          wx:key="round"
+          row="{{row}}"
+        />
+      </block>
     </view>
 
     <!-- 操作 -->
     <view class="acts">
-      <button class="gp-btn gp-btn-primary" bindtap="saveImage" disabled="{{generating}}">
+      <button class="gp-btn gp-btn-primary" wx:if="{{mode !== 'reveal'}}" bindtap="saveImage" disabled="{{generating}}">
         {{generating ? '正在生成…' : (shareReady ? '保存战绩图到相册' : '生成战绩图')}}
       </button>
       <button class="gp-btn gp-btn-ghost" open-type="share">分享给好友</button>
-      <button class="gp-btn gp-btn-ghost" wx:if="{{mode === 'endless'}}" bindtap="again">再来一局</button>
+      <button class="gp-btn gp-btn-ghost" wx:if="{{mode !== 'daily'}}" bindtap="again">再来一局</button>
       <button class="gp-btn gp-btn-ghost" bindtap="goHome">返回首页</button>
     </view>
 

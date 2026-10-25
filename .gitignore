@@ -28,6 +28,8 @@ assets/
 node_modules/
 package-lock.json
 miniprogram_npm/
+__pycache__/
+*.pyc
 
 # 编辑器 / 系统
 .vscode/

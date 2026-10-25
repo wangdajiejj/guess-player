@@ -9,7 +9,7 @@
 }
 
 .cs-panel {
-  background: #fff;
+  background: var(--gp-card);
   border-radius: 28rpx 28rpx 0 0;
   height: 80vh;
   display: flex;
@@ -27,7 +27,7 @@
   width: 72rpx;
   height: 8rpx;
   border-radius: 4rpx;
-  background: #dcdfdc;
+  background: var(--gp-holder);
   margin: 16rpx auto 4rpx;
 }
 
@@ -46,7 +46,7 @@
 .cs-title-txt {
   font-size: 32rpx;
   font-weight: 500;
-  color: #1f2421;
+  color: var(--gp-text);
 }
 
 .cs-count {
@@ -58,7 +58,7 @@
 
 .cs-close {
   font-size: 26rpx;
-  color: #9aa09c;
+  color: var(--gp-text-mute);
 }
 
 /* ---------------- 条件区 ---------------- */
@@ -76,7 +76,7 @@
 
 .cs-cond-tip {
   font-size: 22rpx;
-  color: #9aa09c;
+  color: var(--gp-text-mute);
 }
 
 .cs-cond-acts {
@@ -91,7 +91,7 @@
 
 .cs-act-divider {
   margin: 0 10rpx;
-  color: #d5d9d6;
+  color: var(--gp-divider);
   font-size: 22rpx;
 }
 
@@ -105,6 +105,7 @@
   padding: 0 32rpx;
 }
 
+/* 未选中 = 描边空心；选中 = 判定色实心。两种状态必须一眼分开 */
 .cs-chip {
   display: inline-flex;
   align-items: baseline;
@@ -114,9 +115,9 @@
   border-radius: 10rpx;
   font-size: 24rpx;
   line-height: 1.4;
-  background: #f4f6f4;
-  color: #6b716d;
-  border: 2rpx solid transparent;
+  background: var(--gp-chip-bg);
+  color: var(--gp-chip-text);
+  border: 2rpx solid rgba(0, 0, 0, 0.12);
 }
 
 .cs-chip-label {
@@ -126,30 +127,39 @@
 }
 
 /* 启用后按判定色实心显示，和线索卡里的颜色对得上 */
-.cs-chip-on.cs-chip-green { background: #6aaa64; color: #fff; }
-.cs-chip-on.cs-chip-amber { background: #c9b458; color: #fff; }
-.cs-chip-on.cs-chip-gray  { background: #787c7e; color: #fff; }
+.cs-chip-on { font-weight: 500; }
+.cs-chip-on.cs-chip-green { background: #6aaa64; color: #fff; border-color: #578f53; }
+.cs-chip-on.cs-chip-amber { background: #c9b458; color: #fff; border-color: #a89349; }
+.cs-chip-on.cs-chip-gray  { background: #787c7e; color: #fff; border-color: #63666a; }
+
+@media (prefers-color-scheme: dark) {
+  /* 深色下实心暗底太像选中态，未选中改成透明底 + 亮描边，只留"空心/实心"一个区别维度 */
+  .cs-chip {
+    background: transparent;
+    border-color: rgba(255, 255, 255, 0.26);
+  }
+}
 
 .cs-cons {
   padding: 10rpx 32rpx 0;
   font-size: 22rpx;
-  color: #9aa09c;
+  color: var(--gp-text-mute);
   line-height: 1.6;
 }
 
 .cs-cons-tip {
-  color: #b3b8b5;
+  color: var(--gp-text-mute);
 }
 
 .cs-cons-item {
   margin-right: 14rpx;
-  color: #6b716d;
+  color: var(--gp-chip-text);
 }
 
 .cs-hint {
   padding: 12rpx 32rpx 6rpx;
   font-size: 22rpx;
-  color: #b3b8b5;
+  color: var(--gp-text-mute);
   border-top: 1rpx solid var(--gp-line, rgba(0,0,0,0.06));
   margin-top: 12rpx;
 }
@@ -169,7 +179,7 @@
 }
 
 .cs-item-hover {
-  background: #f6f8f6;
+  background: var(--gp-field-hi);
 }
 
 .cs-item-done {
@@ -190,7 +200,7 @@
 
 .cs-name {
   font-size: 30rpx;
-  color: #1f2421;
+  color: var(--gp-text);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -218,7 +228,7 @@
 .cs-cell-label {
   flex-shrink: 0;
   font-size: 20rpx;
-  color: #b3b8b5;
+  color: var(--gp-text-mute);
   margin-right: 8rpx;
 }
 
@@ -226,7 +236,7 @@
   flex: 1;
   min-width: 0;
   font-size: 23rpx;
-  color: #4a4d4f;
+  color: var(--gp-gray-dark);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -235,15 +245,15 @@
 .cs-tag {
   flex-shrink: 0;
   font-size: 20rpx;
-  color: #8a7a26;
-  background: #faf3dc;
+  color: var(--gp-amber-dark);
+  background: var(--gp-amber-bg);
   padding: 4rpx 14rpx;
   border-radius: 20rpx;
 }
 
 .cs-tag-done {
-  color: #6b716d;
-  background: #eef0ee;
+  color: var(--gp-chip-text);
+  background: var(--gp-gray-bg);
 }
 
 .cs-capped {
@@ -251,8 +261,8 @@
   padding: 14rpx 32rpx;
   font-size: 21rpx;
   line-height: 1.6;
-  color: #8a7a26;
-  background: #faf3dc;
+  color: var(--gp-amber-dark);
+  background: var(--gp-amber-bg);
   white-space: pre-line;
 }
 
@@ -260,7 +270,10 @@
   padding: 120rpx 60rpx;
   text-align: center;
   font-size: 26rpx;
-  color: #9aa09c;
-  white-space: pre-line;
+  color: var(--gp-text-mute);
   line-height: 1.8;
+}
+
+.cs-empty text {
+  display: block;
 }

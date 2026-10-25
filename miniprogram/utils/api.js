@@ -75,10 +75,11 @@ function callMock(name, data) {
     return Promise.reject(mkErr(-1, 'mock-api.js 不存在，请双击 scripts/开启本地测试.bat 重新安装'));
   }
   const table = {
-    gameStart: () => mock.gameStart(data.mode),
+    gameStart: () => mock.gameStart(data.mode, data.difficulty, data.theme),
     gameGuess: () => mock.gameGuess(data.gameId, data.playerId),
     gameResume: () => mock.gameResume(data.gameId),
     gameResult: () => mock.gameResult(data.gameId),
+    gameReveal: () => mock.gameReveal(data.gameId),
     getPlayers: () => mock.getPlayers(data.version)
   };
   const fn = table[name];
@@ -106,11 +107,14 @@ function call(name, data = {}) {
 }
 
 module.exports = {
-  /** 幂等开局 */
-  gameStart: (mode) => call('gameStart', { mode }),
+  /** 幂等开局。difficulty 只对 endless/reveal 生效；theme = 专题 id（同样仅非 daily） */
+  gameStart: (mode, difficulty, theme) => call('gameStart', { mode, difficulty, theme }),
 
   /** 提交猜测 */
   gameGuess: (gameId, playerId) => call('gameGuess', { gameId, playerId }),
+
+  /** 反向猜球：再揭晓一条答案线索 */
+  gameReveal: (gameId) => call('gameReveal', { gameId }),
 
   /** 续上次对局 */
   gameResume: (gameId) => call('gameResume', { gameId }),

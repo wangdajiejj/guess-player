@@ -69,15 +69,31 @@ async function getSalt(db) {
  * 答案池配置按模式分档（daily 比 endless 严格，理由见 C.MIN_FAME_DAILY）。
  * 线上可用 meta/answer_pool 的 minFameDaily / minFameEndless 覆盖，
  * 老的 minFame 字段保留作兜底，改配置不用停机。
+ *
+ * 2026-10-25 起 endless 支持 difficulty 分档（star / normal / all）：
+ *   star   -> minFameStar   （默认 5，只抽巨星）
+ *   normal -> minFameNormal （默认 4，与每日一题同档）
+ *   all / 不传 -> minFameEndless（默认 3，含冷门，保持老行为）
  */
-async function getAnswerPoolConfig(db, mode) {
+async function getAnswerPoolConfig(db, mode, difficulty) {
   const m = await getMeta(db, 'answer_pool', null);
-  const key = mode === 'daily' ? 'minFameDaily' : 'minFameEndless';
-  const fallback = mode === 'daily' ? C.MIN_FAME_DAILY : C.MIN_FAME;
-  return {
-    minFame: (m && typeof m[key] === 'number') ? m[key]
+  const pick = (key, fallback) =>
+    (m && typeof m[key] === 'number') ? m[key]
       : (m && typeof m.minFame === 'number') ? m.minFame
-        : fallback,
+        : fallback;
+
+  let minFame;
+  if (mode === 'daily') {
+    minFame = pick('minFameDaily', C.MIN_FAME_DAILY);
+  } else if (difficulty === 'star') {
+    minFame = pick('minFameStar', C.MIN_FAME_STAR);
+  } else if (difficulty === 'normal') {
+    minFame = pick('minFameNormal', C.MIN_FAME_NORMAL);
+  } else {
+    minFame = pick('minFameEndless', C.MIN_FAME);
+  }
+  return {
+    minFame,
     activeOnly: !!(m && m.activeOnly),
     excludedIds: (m && Array.isArray(m.excludedIds)) ? m.excludedIds : []
   };
@@ -85,12 +101,28 @@ async function getAnswerPoolConfig(db, mode) {
 
 /* ---------------- 答案池 ---------------- */
 
+/** 专题练习：按主题条件过滤（条件定义见 C.THEMES） */
+function themeFilter(p, t) {
+  if (!t) return true;
+  if (t.league) return p.league === t.league;
+  if (t.nationality) return p.nationality === t.nationality;
+  if (t.active !== undefined) return p.active === t.active;
+  if (t.foot) return p.preferred_foot === t.foot;
+  if (t.group) return p.position_group === t.group;
+  if (t.bornAfter) return Number(String(p.birth_date || '').slice(0, 4)) > t.bornAfter;
+  return true;
+}
+
 /**
  * 拉取答案池，按 id 升序 —— 顺序稳定是「同一天同一用户答案固定」的前提。
- * @param {string} mode 'daily' | 'endless'
+ * @param {string} mode 'daily' | 'endless' | 'reveal'
+ * @param {string} [difficulty] endless/reveal 的难度档：'star' | 'normal' | 'all'
+ * @param {string} [theme] 专题 id（C.THEMES 的键）。带专题时忽略难度档，
+ *                         固定全员池（minFameEndless）再切主题，避免小池筛空。
  */
-async function loadAnswerPool(db, mode) {
-  const cfg = await getAnswerPoolConfig(db, mode);
+async function loadAnswerPool(db, mode, difficulty, theme) {
+  const themed = theme && C.THEMES[theme];
+  const cfg = await getAnswerPoolConfig(db, mode, themed ? '' : difficulty);
   const where = { fame_level: db.command.gte(cfg.minFame) };
   if (cfg.activeOnly) where.active = true;
 
@@ -102,6 +134,7 @@ async function loadAnswerPool(db, mode) {
 
   let pool = (res.data || []).filter(p => cfg.excludedIds.indexOf(p.id) === -1);
   if (!pool.length) pool = res.data || [];
+  if (themed) pool = pool.filter(p => themeFilter(p, C.THEMES[theme]));
   return pool;
 }
 
@@ -161,12 +194,15 @@ function pickFields(player, fields) {
 /**
  * 对局文档 -> 可安全下发给客户端的结构。
  * 关键：绝不携带 answerId。（docs/03-algorithm.md §4.3）
+ * extra：模式特有的附加字段（如 reveal 模式的已揭线索），浅合并进 data。
  */
-function publicGame(game, rows = []) {
+function publicGame(game, rows = [], extra = {}) {
   const used = (game.guessIds || []).length;
-  return {
+  return Object.assign({
     gameId: game.gameId,
     mode: game.mode,
+    difficulty: game.difficulty || '',
+    theme: game.theme || '',
     dateKey: game.dateKey,
     maxGuesses: game.maxGuesses || C.MAX_GUESSES,
     used,
@@ -174,7 +210,53 @@ function publicGame(game, rows = []) {
     status: game.status,
     score: game.score || 0,
     rows
+  }, extra);
+}
+
+/* ---------------- 反向猜球：线索揭晓 ---------------- */
+
+/**
+ * 「反向猜球」已揭晓的线索（答案自身的精确属性）。
+ *
+ * 只下发前 revealedCount 条（按 C.REVEAL_ORDER 顺序），绝不带 answerId
+ * 或答案姓名。年龄在服务端算好 —— birth_date 本身不能在这一步下发。
+ *
+ * @returns {Array<{key, label, text, value}>}
+ */
+function revealCluesOf(answer, revealedCount, dateKey) {
+  if (!answer || !revealedCount) return [];
+  const cmp = require('./mock-compare');
+  const out = [];
+  const labels = {
+    nationality: '国籍', league: '联赛', club: '俱乐部', position: '位置',
+    age: '年龄', height: '身高', shirt_number: '球衣号', preferred_foot: '惯用脚'
   };
+  C.REVEAL_ORDER.slice(0, Math.max(0, Math.min(revealedCount, C.REVEAL_ORDER.length)))
+    .forEach(key => {
+      let value, text;
+      if (key === 'age') {
+        value = cmp.calcAge(answer.birth_date, dateKey || beijingDateKey());
+        text = value + '岁';
+      } else if (key === 'height') {
+        value = answer.height_cm;
+        text = value + 'cm';
+      } else if (key === 'shirt_number') {
+        value = answer.shirt_number;
+        text = '#' + value;
+      } else {
+        value = answer[key];
+        text = String(value);
+      }
+      out.push({ key, label: labels[key], text, value });
+    });
+  return out;
+}
+
+/** 反向猜球：当前「立刻猜中」的得分（揭得越少分越高，与常规模式同构） */
+function revealMaxScore(revealedCount, maxGuesses) {
+  const max = maxGuesses || C.MAX_GUESSES;
+  const n = Math.max(1, Math.min(revealedCount || 1, max));
+  return Math.max(0, (max + 1 - n) * 100);
 }
 
 /** 通过 gameId 查对局，找不到返回 null */
@@ -229,6 +311,8 @@ module.exports = {
   ok, fail, beijingDateKey,
   getMeta, getSalt, getAnswerPoolConfig,
   loadAnswerPool, pickDailyAnswer, pickEndlessAnswer,
+  themeFilter,
   genGameId, modHex, pickFields, publicGame,
+  revealCluesOf, revealMaxScore,
   findGame, findToday, getPlayerById, replayRows
 };

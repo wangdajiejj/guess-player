@@ -45,7 +45,6 @@ exports.main = async (event = {}) => {
       if (!answer) throw abort(C.CODE.INTERNAL, '答案数据异常');
 
       const dateKey = game.dateKey || U.beijingDateKey();
-      const verdict = compare(guess, answer, dateKey);
       const hit = isHit(guess, answer);
 
       const nextGuessIds = guessIds.concat([playerId]);
@@ -53,13 +52,21 @@ exports.main = async (event = {}) => {
       const max = game.maxGuesses || C.MAX_GUESSES;
       const status = hit ? 'won' : (used >= max ? 'lost' : 'playing');
 
+      // 反向猜球：分数看「揭了几条线索」而不是「猜了几次」；
+      // 且不下发 verdict —— 8 行比对会白送大量答案相对信息（绿=命中等），
+      // 揭线索模式的情报只能来自揭晓按钮。改发被猜球员本体供列表渲染。
+      const isReveal = game.mode === 'reveal';
+      const revealed = isReveal ? (game.revealed || 1) : used;
+
       // --- 写 ---
       const patch = {
         guessIds: nextGuessIds,
         status,
         finishedAt: status === 'playing' ? 0 : Date.now(),
-        // 1 次猜中 800 分，8 次猜中 100 分，失败 0 分
-        score: hit ? Math.max(0, (max + 1 - used) * 100) : 0
+        // 常规：1 次猜中 800 分；反向：第 1 条线索就猜中 800 分。失败 0 分
+        score: hit ? (isReveal
+          ? Math.max(0, (max + 1 - revealed) * 100)
+          : Math.max(0, (max + 1 - used) * 100)) : 0
       };
       await tx.collection('games').doc(game._id).update({ data: patch });
 
@@ -72,7 +79,10 @@ exports.main = async (event = {}) => {
           used,
           remaining: Math.max(0, max - used),
           score: patch.score,
-          verdict
+          verdict: isReveal ? null : compare(guess, answer, dateKey),
+          player: isReveal ? U.pickFields(guess, C.CLIENT_FIELDS) : undefined,
+          revealed: isReveal ? revealed : undefined,
+          maxScore: isReveal ? U.revealMaxScore(revealed, max) : undefined
         }
       };
     });

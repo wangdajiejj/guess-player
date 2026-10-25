@@ -23,6 +23,23 @@ exports.main = async (event = {}) => {
     if (!game) return U.fail(C.CODE.GAME_NOT_FOUND);
     if (game._openid !== OPENID) return U.fail(C.CODE.FORBIDDEN);
 
+    // 反向猜球：重放已揭线索 + 已猜名单（无 verdict），不放比对行
+    if (game.mode === 'reveal') {
+      const answer = await U.getPlayerById(db, game.answerId);
+      if (!answer) return U.fail(C.CODE.INTERNAL, '答案数据异常');
+      const rows = [];
+      const ids = game.guessIds || [];
+      for (let i = 0; i < ids.length; i++) {
+        const p = await U.getPlayerById(db, ids[i]);
+        if (p) rows.push({ round: i + 1, guessedId: p.id, hit: p.id === answer.id, player: U.pickFields(p, C.CLIENT_FIELDS) });
+      }
+      return U.ok(U.publicGame(game, rows, {
+        revealed: game.revealed || 1,
+        clues: U.revealCluesOf(answer, game.revealed || 1, game.dateKey),
+        maxScore: U.revealMaxScore(game.revealed || 1, game.maxGuesses)
+      }));
+    }
+
     let rows = [];
     if ((game.guessIds || []).length) {
       const answer = await U.getPlayerById(db, game.answerId);

@@ -22,6 +22,7 @@ from pypinyin import pinyin, Style  # noqa: E402
 
 import roster_a, roster_b, roster_c, roster_d  # noqa: E402
 import roster_e, roster_f, roster_g  # noqa: E402
+import roster_h  # noqa: E402  # 2026-10-25 扩充批（现役 12 + 退役传奇 36）
 
 POSITION_GROUP = {
     '门将': 'GK',
@@ -120,6 +121,17 @@ CLUB_COLORS = {
     '横滨水手': ('#0033A0', '#E2001A'),
     'FC东京': ('#004098', '#E60012'),
     '浦项制铁': ('#1A1A1A', '#ED1C24'),
+    # —— 2026-10-25 校准新增（莱万→芝加哥火焰、孙兴慜→洛杉矶FC、穆勒→温哥华白浪、
+    #    弗拉霍维奇→贝西克塔斯、奥纳纳→特拉布宗体育）——
+    '芝加哥火焰': ('#D0021B', '#01295F'),
+    '洛杉矶FC': ('#000000', '#C39E6D'),
+    '温哥华白浪': ('#00245D', '#86BCFF'),
+    '贝西克塔斯': ('#000000', '#FFFFFF'),
+    '特拉布宗体育': ('#6C1D45', '#5CB8E8'),
+    # —— 2026-10-25 校准新增（马赫雷斯→吉达国民、莫拉塔→莱加内斯、努涅斯→迪里耶）——
+    '吉达国民': ('#0B8043', '#FFFFFF'),
+    '莱加内斯': ('#005CA9', '#FFFFFF'),
+    '迪里耶': ('#245C40', '#C9A227'),
 }
 DEFAULT_COLOR = ('#0C5C3B', '#148053')
 
@@ -147,7 +159,7 @@ def to_pinyin(name_cn: str):
 def build():
     rows = []
     for mod in (roster_a, roster_b, roster_c, roster_d,
-                roster_e, roster_f, roster_g):
+                roster_e, roster_f, roster_g, roster_h):
         rows.extend(mod.ROWS)
 
     rows.sort(key=lambda r: r['id'])
@@ -192,7 +204,7 @@ def build():
             'meme': r.get('meme', ''),
             'primary_color': primary,
             'secondary_color': secondary,
-            'data_as_of': '2026-10-11'
+            'data_as_of': '2026-10-25'
         })
 
     path = os.path.join(ROOT, 'database', 'players.full.jsonl')

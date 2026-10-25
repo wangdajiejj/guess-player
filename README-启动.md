@@ -14,7 +14,7 @@
 | 花多久 | **2 分钟** | 30 分钟 + 等备案 |
 | 数据存哪 | 你手机/模拟器的本地存储 | 微信云数据库 |
 
-⚠️ **本地测试模式绝对不能用来提审。** 它把比对逻辑和 500 人答案池放进了客户端，
+⚠️ **本地测试模式绝对不能用来提审。** 它把比对逻辑和 548 人答案池放进了客户端，
 别人反编译后遍历候选池就能试出每天的答案。提审前必须走 `scripts\关闭本地测试-提审前必点.bat`。
 
 ---
@@ -150,7 +150,7 @@ const ENV_ID = 'guess-player-1a2b3c4d';   // ← 换成你自己的
 node scripts/sync-shared.js
 #
 # 4. 开发者工具里：右击每个 cloudfunctions/xxx 目录 → 「上传并部署：云端安装依赖」
-#    一共 5 个：gameStart / gameGuess / gameResume / gameResult / getPlayers
+#    一共 6 个：gameStart / gameGuess / gameResume / gameResult / gameReveal / getPlayers
 ```
 
 ### 第 5 步：导入项目
@@ -199,7 +199,7 @@ scripts\一键测试.bat          # 双击即可，8 段全绿才准提审
 | 脚本 | 断言数 | 校验内容 |
 | --- | --- | --- |
 | `test-compare.js` | 32 | 判定规则、公差、年龄计算、抽样发散度（**modHex 精度**） |
-| `test-flow.js` | 77 | 5 个云函数端到端、并发幂等、越权、**答案零泄露** |
+| `test-flow.js` | 150 | 6 个云函数端到端、并发幂等、越权、难度分档、反向猜球、专题练习、**答案零泄露** |
 | `test-search.js` | 51 | 真实搜索输入 41 条、索引一致性、歧义词排序 |
 | `test-candidates.js` | 36 | 线索筛选语义、**答案永不被筛掉**（1.1 万次筛选）、与服务端口径对拍 |
 | `test-sfx.js` | 24 | 音效参数安全区间、调用点没错名字、设置开关 |
@@ -208,7 +208,7 @@ scripts\一键测试.bat          # 双击即可，8 段全绿才准提审
 | `simulate.js` | — | 难度验收（机器人最坏步数 ≤ 8，即没有死题） |
 | `validate.py` | — | 500 条球员数据的字段、译名、search_index |
 
-**合计 299 条断言**（32+77+51+36+24+66+13）。
+**合计 373 条断言**（32+150+51+36+24+66+14）。
 
 `check-mp.js` 的条数随模式变：本地测试模式 **13 条**（含「配套文件齐全」），
 正式版 **15 条**（含「没有残留的 mock-*.js」）。
@@ -297,8 +297,8 @@ guess-player/
 │   └── utils/              api · search · share · storage · theme
 │                           age 年龄 · clue 线索筛选 · sfx 音效
 │                           （本地测试模式下会多出 6 个 mock-*.js，提审前会被删掉）
-├── cloudfunctions/         5 个云函数 + _shared/（判定与抽样的单一真源）
-├── database/               players.full.jsonl（500 人）+ roster_{a..g}.py + validate.py
+├── cloudfunctions/         6 个云函数 + _shared/（判定与抽样的单一真源）
+├── database/               players.full.jsonl（548 人）+ roster_{a..h}.py + validate.py
 ├── scripts/                构建、同步、测试脚本
 │   ├── 一键测试.bat                      8 段全量回归
 │   ├── 开启本地测试.bat                  ← 想立刻看效果就双击它

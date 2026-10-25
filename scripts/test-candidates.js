@@ -7,12 +7,13 @@
  *   筛选是客户端唯一的「推理类」逻辑，一旦它把正确答案筛掉了，
  *   玩家就会看到"我明明知道线索却找不到人"，而且不会报错、很难察觉。
  *
- * 五组断言：
+ * 六组断言：
  *   1. 客户端判定口径与服务端 _shared 逐一对拍（年龄 / 日期 / 公差 / 位置大类）
  *   2. 单条线索的语义正确（绿=精确、黄=放宽、灰=排除、数值箭头方向）
  *   3. ★ 黄金不变量：用真实题库模拟对局，答案永不被筛掉
  *   4. 边界：数据缺失的线索不产生约束（不能把池子筛成空集）
  *   5. 体验指标：叠加全部线索后候选池缩到多少人
+ *   6. 去重等价性：候选面板合并重复标签后，筛选结果与约束说明分毫不变
  */
 const fs = require('fs');
 const path = require('path');
@@ -293,6 +294,77 @@ G('5. 结果分布');
     if (clue.filterPlayers(ALL, [c], DK).length === 0) empty.push(k);
   });
   ok('每个字段都能筛出非空结果', empty.length === 0, empty);
+}
+
+/* ================= 6. 去重等价性（候选面板用） ================= */
+G('6. 线索去重：合并重复标签不改变筛选结果');
+
+{
+  const rng = makeRng(20261025);
+  const GAMES = 40;
+  let eqAll = 0, eqDesc = 0, remapBad = 0, dupSaved = 0, totalBefore = 0, totalAfter = 0;
+
+  for (let gi = 0; gi < GAMES; gi++) {
+    const answer = DAILY_POOL[Math.floor(rng() * DAILY_POOL.length)];
+    const used = [];
+    const rows = [];
+
+    for (let r = 1; r <= 6; r++) {
+      let g;
+      do { g = ALL[Math.floor(rng() * ALL.length)]; } while (used.indexOf(g.id) !== -1);
+      used.push(g.id);
+      rows.push({ round: r, guessedId: g.id, verdict: Scompare.compare(g, answer, DK), player: g });
+    }
+
+    const all = clue.buildClues(rows);
+    const { clues, idRemap } = clue.dedupeClues(all);
+    totalBefore += all.length;
+    totalAfter += clues.length;
+    if (all.length > clues.length) dupSaved++;
+
+    // 6.1 去重前后：全量线索的筛选结果、约束说明必须一致（答案仍在）
+    const hitA = clue.filterPlayers(ALL, all, DK);
+    const hitB = clue.filterPlayers(ALL, clues, DK);
+    if (hitA.length !== hitB.length || hitA.some((p, i) => p.id !== hitB[i].id)) eqAll++;
+    const dA = JSON.stringify(clue.describeConstraints(all, DK));
+    const dB = JSON.stringify(clue.describeConstraints(clues, DK));
+    if (dA !== dB) eqDesc++;
+
+    // 6.2 任取被合并掉的重复项当初始条件，remap 必须把它指到仍存在的代表 id 上
+    Object.keys(idRemap).forEach(id => {
+      if (id === idRemap[id]) return;   // 保留项不动
+      const rep = clues.filter(c => c.id === idRemap[id])[0];
+      if (!rep) { remapBad++; return; }
+      // 代表与被合并项「同字段同值同判定」——单条筛选结果也应一致
+      const orig = all.filter(c => c.id === id)[0];
+      const rA = clue.filterPlayers(ALL, [orig], DK).map(p => p.id);
+      const rB = clue.filterPlayers(ALL, [rep], DK).map(p => p.id);
+      if (JSON.stringify(rA) !== JSON.stringify(rB)) remapBad++;
+    });
+  }
+
+  ok(`去重不改变全量筛选结果（${GAMES} 局）`, eqAll === 0, { diff: eqAll });
+  ok(`去重不改变约束说明（${GAMES} 局）`, eqDesc === 0, { diff: eqDesc });
+  ok(`被合并项的单条筛选与代表项一致 + remap 指向存在线索`, remapBad === 0, { bad: remapBad });
+  ok('多行猜测确实会被去重压掉重复标签', dupSaved > 0 && totalAfter < totalBefore,
+    { before: totalBefore, after: totalAfter, dedupedGames: dupSaved });
+
+  // 6.3 归组排序：同字段挨在一起，顺序与 CLUE_META 一致（面板横条按字段分组展示）
+  {
+    const { clues } = clue.dedupeClues(clue.buildClues([
+      { round: 1, verdict: Scompare.compare(ALL[3], ALL[1], DK), player: ALL[3] },
+      { round: 2, verdict: Scompare.compare(ALL[4], ALL[1], DK), player: ALL[4] }
+    ]));
+    const metaOrder = require('../miniprogram/utils/theme.js').CLUE_META.map(m => m.key);
+    let idx = 0, grouped = true;
+    clues.forEach(c => {
+      const at = metaOrder.indexOf(c.key);
+      if (at < idx) grouped = false;   // 字段序号倒退 = 没归好组
+      idx = at;
+    });
+    ok('去重后按字段归组（国籍一组、俱乐部一组…）', grouped);
+  }
+  console.log(`  · 体验指标：${GAMES} 局共 ${totalBefore} 条线索去重后剩 ${totalAfter} 条`);
 }
 
 /* ---------- 汇总 ---------- */

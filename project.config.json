@@ -7,12 +7,7 @@
   "compileType": "miniprogram",
   "libVersion": "3.5.5",
   "packOptions": {
-    "ignore": [
-      {
-        "value": "miniprogram/sitemap.json",
-        "type": "file"
-      }
-    ],
+    "ignore": [],
     "include": []
   },
   "setting": {

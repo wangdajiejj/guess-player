@@ -19,7 +19,18 @@ exports.main = async (event = {}) => {
   const { OPENID } = cloud.getWXContext();
   if (!OPENID) return U.fail(C.CODE.FORBIDDEN, '无法获取用户标识');
 
-  const mode = event.mode === 'endless' ? 'endless' : 'daily';
+  const mode = ['endless', 'reveal'].indexOf(event.mode) !== -1 ? event.mode : 'daily';
+  // 难度分档作用于 endless / reveal（star/normal/all），非法值一律回落到 all
+  const difficulty = (mode !== 'daily' && C.DIFFICULTIES.indexOf(event.difficulty) !== -1)
+    ? event.difficulty : '';
+  // 专题练习：只在 endless/reveal 生效，必须是已知主题（校验失败直接拒，别静默开错局）
+  let theme = '';
+  if (event.theme) {
+    if (mode === 'daily' || !C.THEMES[event.theme]) {
+      return U.fail(C.CODE.INVALID_PARAM, '未知的专题');
+    }
+    theme = event.theme;
+  }
   const dateKey = U.beijingDateKey();
 
   try {
@@ -27,8 +38,8 @@ exports.main = async (event = {}) => {
     let game = mode === 'daily' ? await U.findToday(db, OPENID, dateKey) : null;
 
     if (!game) {
-      // 2) 抽答案
-      const pool = await U.loadAnswerPool(db, mode);
+      // 2) 抽答案（reveal 与 endless 同池；带专题时切主题子池）
+      const pool = await U.loadAnswerPool(db, mode, difficulty, theme);
       if (!pool.length) return U.fail(C.CODE.POOL_EMPTY);
 
       const { salt, mode: seedMode } = await U.getSalt(db);
@@ -42,13 +53,17 @@ exports.main = async (event = {}) => {
         gameId,
         _openid: OPENID,
         mode,
+        difficulty,
+        theme,
         dateKey,
         // 唯一索引只约束"每日挑战"：daily 用 openid+dateKey，
-        // endless 用 gameId（本来就唯一），否则玩家一天只能开一局无限模式。
-        uniqueKey: mode === 'daily' ? `${OPENID}|daily|${dateKey}` : `endless|${gameId}`,
+        // endless/reveal 用 gameId（本来就唯一）。
+        uniqueKey: mode === 'daily' ? `${OPENID}|daily|${dateKey}` : `${mode}|${gameId}`,
         answerId: answer.id,
         maxGuesses: C.MAX_GUESSES,
         guessIds: [],
+        // 反向猜球：开局自动揭第一条（国籍），列表不至于空着开场
+        revealed: mode === 'reveal' ? 1 : 0,
         status: 'playing',
         startedAt: Date.now(),
         finishedAt: 0,
@@ -80,7 +95,19 @@ exports.main = async (event = {}) => {
       if (answer) rows = await U.replayRows(db, game, answer);
     }
 
-    return U.ok(U.publicGame(game, rows));
+    // 反向猜球：开局带上已揭线索（新局固定 1 条：国籍）
+    let extra = {};
+    if (game.mode === 'reveal') {
+      const ans = await U.getPlayerById(db, game.answerId);
+      if (!ans) return U.fail(C.CODE.INTERNAL, '答案数据异常');
+      extra = {
+        revealed: game.revealed || 1,
+        clues: U.revealCluesOf(ans, game.revealed || 1, game.dateKey),
+        maxScore: U.revealMaxScore(game.revealed || 1, game.maxGuesses)
+      };
+    }
+
+    return U.ok(U.publicGame(game, rows, extra));
   } catch (e) {
     console.error('[gameStart]', e);
     return U.fail(C.CODE.INTERNAL, e.message);
