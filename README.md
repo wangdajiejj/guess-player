@@ -18,6 +18,21 @@
 
 ---
 
+## 立即游玩（网页版）
+
+不用装任何东西，两种方式任选：
+
+- **在线玩**：打开 **https://wangdajiejj.github.io/guess-player/**
+- **下载玩**：仓库根目录的 `index.html` 是一个**自包含单文件**（约 440 KB，
+  内置全部 548 人题库与判定引擎），下载后**双击即玩，离线可用**。
+
+网页版由 `node scripts/build-web.js` 生成：打包时直接内联 `miniprogram/utils/` 的
+对局与筛选引擎，因此与小程序版的玩法、题库、判定口径**完全一致**（含每日一题、
+难度分档、12 个专题、反向猜球和点标签筛候选）。对局与战绩只存在浏览器本地。
+改了题库或引擎后重跑一次生成脚本即可。
+
+---
+
 ## 玩法
 
 | 模式 | 答案怎么来 | 机会 | 限制 |
@@ -66,7 +81,8 @@ miniprogram/          客户端：页面、组件、工具
   utils/              clue.js（按线索筛候选池）、age.js、sfx.js、rank.js、share.js …
 cloudfunctions/       6 个云函数 + _shared/（单一真源，改完要跑 sync-shared.js）
 database/             players.full.jsonl（548 人）+ roster_{a..h}.py + validate.py
-scripts/              测试、本地模式开关、一键验证
+web/ + index.html     网页版源码（style/app）与生成的自包含单文件（build-web.js）
+scripts/              测试、本地模式开关、一键验证、网页版打包
 docs/                 01-PRD / 02-database / 03-algorithm / 04-testing
                       05-deployment / 06-备案截图
 ```
