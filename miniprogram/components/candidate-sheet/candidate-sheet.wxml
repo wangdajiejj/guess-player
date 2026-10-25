@@ -21,7 +21,8 @@
         </view>
       </view>
 
-      <scroll-view class="cs-cond-scroll" scroll-x enhanced show-scrollbar="{{false}}">
+      <!-- 换行铺开：横向滚动会把后面的标签静默截断，玩家看不全自己的条件 -->
+      <view class="cs-cond-scroll">
         <view class="cs-cond-row">
           <view
             wx:for="{{cluesView}}"
@@ -34,7 +35,7 @@
             <text>{{item.text}}</text>
           </view>
         </view>
-      </scroll-view>
+      </view>
 
       <!-- 只要启用了条件就把实际生效的约束摆出来：人数变化必须能对着条件看 -->
       <view wx:if="{{constraints.length}}" class="cs-cons">
